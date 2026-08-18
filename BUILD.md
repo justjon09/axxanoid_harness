@@ -77,3 +77,24 @@ The Return: The TS core listens to the stdout (standard output) of that Python s
 * *The Skeleton Directories: Physically creating the .AXXANOID_HARNES folder structure you mapped out.*
 * *The Python Sandbox: Creating the axx_env/ virtual environment inside the harness directory so we have our isolated execution room ready.*
 * *The Project Init: Setting up the base package.json and tsconfig.json to support modern TypeScript and Node features.*
+
+
+# Build & Refactor Tracker
+
+## Current State
+- Architecture officially transitioned from OpenClaw to a custom TypeScript/Python hybrid harness.
+- Models locked: `Llama-3-Groq-8B-Tool-Use` (Routing) & `Qwen2.5-Coder-14B` (Execution).
+- Engine locked: `llama.cpp` (`llama-server`) running concurrently with compressed KV cache.
+
+## To-Do List (Next Actions)
+- [X] **Step 1:** Scaffold the `.AXXANOID_HARNES` physical directory structure.
+- [ ] **Step 2:** Initialize the TypeScript foundation (`package.json`, `tsconfig.json`).
+- [ ] **Step 3:** Establish the Python execution sandbox (`axx_env`).
+- [ ] **Step 4:** Write the `models.ini` and `start-engine.sh` files to stabilize the engine layer.
+- [ ] **Step 5:** Port the base `Codeman` async orchestrator loop into the `app/` directory.
+- [ ] **Step 6:** Build the `engine/` translation layer to parse `llama.cpp` JSON schemas natively.
+
+## Completed Log
+- [x] Defined Virtual Company Tiered Roster
+- [x] Defined Hardware/Engine resource allocations
+- [x] Established core documentation files
