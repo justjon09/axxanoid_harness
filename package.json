@@ -1,0 +1,31 @@
+{
+  "name": "axxanoid_harnes",
+  "version": "1.0.0",
+  "description": "Axxanoid Harness is a fully local, 100% offline, zero-cost multi-agent operating system designed specifically for Apple Silicon. It operates as a \"Human-on-the-loop\" factory. The human acts as the CEO, interacting solely with the Chief of Staff (AxxBot).",
+  "main": "index.js",
+  "scripts": {
+    "start": "tsx app/main.ts",
+    "dev": "tsx watch app/main.ts",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/justjon09/axxanoid_harness.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/justjon09/axxanoid_harness/issues"
+  },
+  "homepage": "https://github.com/justjon09/axxanoid_harness#readme",
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  }
+}
