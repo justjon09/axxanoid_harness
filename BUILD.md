@@ -106,9 +106,24 @@ Create AXXANOID_HARNES/engine/models.ini
 Create AXXANOID_HARNES/engine/start-engine.sh
 
 * *Verification*
-AXXANOID_HARNES, run:
-npm run dev
+Jeremys-MacBook-Pro: ~/axxanoid_harnes % npm run dev
+> axxanoid_harnes@1.0.0 dev
+> tsx watch app/main.ts
 
+>>> Booting Axxanoid Harness ....
+>>> API Listening on http://127.0.0.1:8000
+>>> [SYSTEM] Initializing background heartbeat...***
+* *END Verification*
+
+* Step 5: The Orchestrator Loop
+Shared SQLite is the most robust choice. It allows your TypeScript orchestrator and Python execution scripts inside axx_env to read and write state directly to a single file (memory.db) without context pollution or network overhead.
+
+To handle concurrent access cleanly without database locks (SQLITE_BUSY), SQLite Write-Ahead Logging (WAL) mode (PRAGMA journal_mode = WAL;) and a busy timeout (PRAGMA busy_timeout = 5000;) are required.
+* Step 5a: Install better-sqlite3
+npm install better-sqlite3
+npm install --save-dev @types/better-sqlite3
+* Step 5b: Create the Database Module (app/database.ts)
+* Step 5c: Connect Schema to Server Boot (app/main.ts)
 --- living ---
 
 ## Current State

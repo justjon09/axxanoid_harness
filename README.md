@@ -24,5 +24,6 @@ The system relies on a TypeScript/Node.js event loop to manage an asynchronous K
 - **Core Engine:** `llama.cpp` (`llama-server`) running via Homebrew
 - **Routing Core:** Node.js / TypeScript (npm)
 - **Execution Sandbox:** Python 3 (venv)
-- **Models:** - *Head:* `Llama-3-Groq-8B-Tool-Use-Q4_K_M.gguf` (Orchestration/Routing)
+- **Models:** 
+  - *Head:* `Llama-3-Groq-8B-Tool-Use-Q4_K_M.gguf` (Orchestration/Routing)
   - *Hands:* `qwen2.5-coder-14b-instruct-q4_k_m.gguf` (Coding/Execution)

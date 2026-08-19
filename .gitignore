@@ -2,8 +2,6 @@
 node_modules/
 jspm_packages/
 web_modules/
-engine/models
-engine/models/*
 
 # Build outputs
 dist/
@@ -42,3 +40,9 @@ pnpm-debug.log*
 .fseventsd
 .Spotlight-V100
 .Trashes
+
+# Harnes Holdbacks
+engine/models
+engine/models/*
+memory.db
+memory.db*
