@@ -176,7 +176,31 @@ To handle concurrent access cleanly without database locks (SQLITE_BUSY), SQLite
 npm install better-sqlite3
 npm install --save-dev @types/better-sqlite3
 * Step 5b: Create the Database Module (app/database.ts)
-* Step 5c: Connect Schema to Server Boot (app/main.ts)
+* Step 5c: Connect Orchestrator Loop to Server Lifespan (app/main.ts)
+* Verification
+Jeremys-MacBook-Pro: ~/axxanoid_harnes % npm run dev
+
+> axxanoid_harnes@1.0.0 dev
+> tsx watch app/main.ts
+
+>>> [DATABASE] Shared SQLite Workboard schema initialized in WAL mode.
+>>> Booting Axxanoid Harness ....
+>>> API Listening on http://127.0.0.1:8000
+>>> [SYSTEM] Initializing startup heartbeat...
+>>> [HEARTBEAT] Wake sequence initiated. Ingesting core directives into RAM...
+>>> [HEARTBEAT WARNING] Missing directive file: SOUL.md. Skipping.
+>>> [HEARTBEAT WARNING] Missing directive file: IDENTITY.md. Skipping.
+>>> [HEARTBEAT WARNING] Missing directive file: HUMAN.md. Skipping.
+>>> [HEARTBEAT WARNING] Missing directive file: HEARTBEAT.md. Skipping.
+>>> [HEARTBEAT] Executing dynamic audits from HEARTBEAT.md...
+>>> [HEARTBEAT] Audit complete. Ready for Engine Inference.
+>>> [SYSTEM] Initializing background heartbeat (15m pulse)...
+>>> [SYSTEM] Initializing Workboard Orchestrator (5s pulse)...
+^C
+>>> [SYSTEM] Shutting down daemon, Terminating heartbeat...
+11:32:58 AM [tsx] Previous process hasn't exited yet. Force killing...
+Jeremys-MacBook-Pro: ~/axxanoid_harnes % 
+* END Verification
 --- living ---
 
 ### End Axxanoid Harness: Build & Refactor Tracker - detailed
@@ -195,8 +219,8 @@ npm install --save-dev @types/better-sqlite3
 - [X] **Step 4:** Write `models.ini` and `start-engine.sh` with portable relative paths.
 - [ ] **Step 5: Workboard State & Orchestrator Implementation**
   - [X] **Step 5a:** Initialize SQLite schema in WAL mode (`app/database.ts`).
-  - [ ] **Step 5b:** Write task dispatch orchestrator (`app/orchestrator.ts`).
-  - [ ] **Step 5c:** Connect orchestrator loop to server lifespan (`app/main.ts`).
+  - [X] **Step 5b:** Write task dispatch orchestrator (`app/orchestrator.ts`).
+  - [X] **Step 5c:** Connect orchestrator loop to server lifespan (`app/main.ts`).
 - [ ] **Step 6:** Build the `engine/` translation layer to parse `llama.cpp` JSON schemas natively.
 
 ## Completed Log

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { runHeartbeat } from './daemon-control.ts';
 import { initWorkboardSchema } from './database.ts';
+import { runOrchestratorPulse } from './orchestrator.ts';
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -24,15 +25,19 @@ app.get('/', (req, res) => {
 });
 
 let heartbeatInterval: NodeJS.Timeout;
+let orchestratorInterval: NodeJS.Timeout;
 
-const startHeartbeatLoop = () => {
-    console.log(">>> [SYSTEM] Initializing background heartbeat...");
-
-    // Wait 15 minutes (900,000 ms) between pulses
+const startBackgroundLoops = () => {
+    console.log(">>> [SYSTEM] Initializing background heartbeat (15m pulse)...");
     heartbeatInterval = setInterval(async () => {
         console.log("\n>>> [SYSTEM] Triggering 15-Minute Heartbeat...");
         await runHeartbeat();
-    }, 900000)
+    }, 900000);
+
+    console.log(">>> [SYSTEM] Initializing Workboard Orchestrator (5s pulse)...");
+    orchestratorInterval = setInterval(async () => {
+        await runOrchestratorPulse();
+    }, 5000);
 };
 
 // Initialize schema on startup
@@ -44,13 +49,14 @@ const server = app.listen(PORT, () => {
     console.log(`>>> API Listening on http://127.0.0.1:${PORT}`);
     console.log(">>> [SYSTEM] Initializing startup heartbeat...");
     runHeartbeat();
-    startHeartbeatLoop();
+    startBackgroundLoops();
 });
 
 // Graceful Shutdown (Equivalent to FastAPI's 'finally' block in lifespan)
 process.on('SIGINT', () => {
     console.log("\n>>> [SYSTEM] Shutting down daemon, Terminating heartbeat...");
     clearInterval(heartbeatInterval);
+    clearInterval(orchestratorInterval);
     server.close(() => {
         process.exit(0);
     });
