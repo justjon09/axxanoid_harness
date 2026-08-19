@@ -1,65 +1,121 @@
-Our new harness will be Axxanoid Harness
+## Axxanoid Harness: Master Build Outline
 
-AXXANOID_HARNES
-AXXANOID_HARNES/readme.md
-AXXANOID_HARNES/app/ (main entry, system level heartbeat)
-AXXANOID_HARNES/axx_env/ (the python vene)
-AXXANOID_HARNES/configs/(gateway, app, ect)
-AXXANOID_HARNES/agents/(each agent definition soul/ identity/capabilities and workspace)
-AXXANOID_HARNES/tools/
-AXXANOID_HARNES/skills/
-AXXANOID_HARNES/engine/ (parsing per-agent or model)(client/host setup)
-AXXANOID_HARNES/api/
-AXXANOID_HARNES/channels/ (web / cli / whatsapp / ect)
+### Phase 1: Engine, DB & Core Lifespan (COMPLETED)
+* [x] **Step 1:** Scaffold physical directory structure (`.AXXANOID_HARNES/{app,axx_env,configs,agents,tools,skills,engine,api,channels}`).
+* [x] **Step 2:** Initialize TypeScript foundation (`package.json`, `tsconfig.json`, `express`, `better-sqlite3`).
+* [x] **Step 3:** Establish isolated Python execution sandbox (`axx_env`).
+* [x] **Step 4:** Dual-model engine lock-in (`engine/models.ini` & `engine/start-engine.sh` using relative GGUF model paths).
+* [x] **Step 5a:** Shared SQLite Workboard schema initialized in WAL mode (`app/database.ts` with `workboard_cards` and `card_dependencies`).
 
-It enforces a strict **Separation of Concerns**. It isolates the model parsing from the agent personas, and it physically separates the core loop from the web UI.
+---
 
-### The `.AXXANOID_HARNES` Architecture Map
+### Phase 2: State Machine & Translation Layer
+* [ ] **Step 5b:** Write Task Dispatch Orchestrator (`app/orchestrator.ts`)
+* Periodic polling loop for `ready` cards.
+* Dependency resolution (automatically converting `blocked` cards to `ready` when parent cards hit `done`).
+* Asynchronous worker dispatch to prevent context bleed.
+* [ ] **Step 5c:** Wire Orchestrator to Express Lifecycle (`app/main.ts`).
+* [ ] **Step 6:** Engine Client & Schema Translation Layer (`engine/llama-client.ts` & `engine/translator.ts`)
+* HTTP client targeting `llama-server` on port `8080`.
+* Router mapping: Directing AxxBot requests to `Llama-3-Groq-8B` and worker requests to `Qwen2.5-Coder-14B`.
+* Response interceptor: Normalizing output so markdown or plain text tool definitions are cleanly converted into standard `tool_calls` payloads.
+
+---
+
+### Phase 3: Workforce Definitions & Permission Scoping
+* [ ] **Step 7:** Agent Personas & Lane Contracts (`agents/`)
+* Create agent directories: `axxbot/`, `noid/`, `execubot/`, `dobot/`, `pubbot/`.
+* Scaffolding per-agent directive files: `SOUL.md`, `IDENTITY.md`, `CAPABILITIES.md`, `WORKSPACE/`.
+* **Permission Contracts (`contracts.json` per agent):**
+* *AxxBot (Tier 1 Chief of Staff):* Granted read access to user files/documents for intent parsing. Denied shell execution (`terminal:exec`).
+* *Noid (Tier 2 Coder):* Restricted strictly to the project codebase directory. Denied system configuration edits.
+* *ExecuBot (Tier 2 OS Delegate):* Terminal execution enabled inside `axx_env`. Denied Workboard card creation.
+* *DoBot (Tier 2 SysAdmin):* System telemetry & skill management only.
+
+---
+
+### Phase 4: Standardized Skills & Tools Framework
+* [ ] **Step 8:** Skill Schema & Tool Execution Pipeline (`skills/` & `tools/`)
+* **Skill Template Standard (`skills/template.json` / `SKILL.md`):** Uniform structure defining name, description, required parameters, and execution environment (TS vs Python).
+* Open-Source Tool Adapter: Standardized JSON interface allowing external open-source skills to plug directly into the harness without re-engineering.
+* Secure Execution Wrapper (`tools/executor.ts`):
+* TypeScript bridge executing Python tools inside `.AXXANOID_HARNES/axx_env/bin/python` via `child_process.spawn`.
+* Standardized `stdout`/`stderr` logging back to `workboard_cards.result_payload`.
+
+---
+
+### Phase 5: CLI Controls & Interactive Terminal
+* [ ] **Step 9:** CLI Channel Interface (`channels/cli.ts`)
+* Interactive terminal client for the CEO.
+* Direct prompt entry to spawn top-level Workboard cards through AxxBot.
+* CLI control commands:
+* `axx status` — View active, blocked, and completed Workboard cards.
+* `axx pause` / `axx resume` — Emergency halt on the orchestrator event loop.
+* `axx logs [agent]` — Stream real-time agent output.
+
+---
+
+### Phase 6: Web UI, Dashboard & Cron Controls
+* [ ] **Step 10a:** REST & WebSocket API Routes (`api/`)
+* Kanban board CRUD endpoints (`GET/POST /api/cards`, `PUT /api/cards/:id/status`).
+* Real-time WebSocket event broadcaster (`channels/web/ws-server.ts`) to push card updates and agent thought logs to the browser.
+* [ ] **Step 10b:** Web Dashboard Frontend (`channels/web/public/`)
+* Visual Kanban board interface showing real-time card transitions (`ready` -> `in_progress` -> `done`).
+* **Cron & Heartbeat Control Panel:** UI toggle for background heartbeat loops, frequency sliders, and audit script toggles.
+* **Permissions & Directives Viewer:** UI interface to view active contracts, edit `SOUL.md` / `HUMAN.md` directives, and manage file read permissions for AxxBot.
+
+---
+
+### Phase 7: Validation & End-to-End Factory Verification
+* [ ] **Step 11:** Full System Assembly & Playbook Finalization
+* Multi-agent dependency chain test (AxxBot creates card -> Noid writes code -> ExecuBot executes -> AxxBot reports final output).
+* Verify zero-cost, 100% offline execution on Apple Silicon Metal.
+* Update `END-TO-END.md` and `README.md` with final production commands.
+
+## END Axxanoid Harness: Master Build Outline
+
+### Axxanoid Harness: Architecture Map
 
 **1. `AXXANOID_HARNES/app/` (The Core Loop)**
-
 * **What goes here:** The main execution loop, task queuing, and the heartbeat daemon.
 * **Mapped from Codeman:** `src/main.ts`, `src/orchestrator-loop.ts`, `src/daemon-control.ts`, `src/task-queue.ts`.
 * **Function:** This is the CEO's brainstem. It runs the continuous `while` loop that sweeps the workboard and spawns background tasks, entirely decoupled from the models.
 
 **2. `AXXANOID_HARNES/engine/` (The Translation Layer)**
-
 * **What goes here:** Model client setup, specific parsing logic, and proxy routing.
 * **Mapped from Codeman:** `src/utils/opencode-cli-resolver.ts`, `src/utils/claude-cli-resolver.ts`, `src/mux-factory.ts`.
 * **Function:** **This is where we solve our 10-day nightmare.** This folder's sole job is to translate the generic JSON outputs from `llama.cpp` (Port 8080) into standard tool calls. If Qwen hallucinates a markdown block, this engine intercepts it, formats it perfectly, and hands it to the `app/` layer.
 
 **3. `AXXANOID_HARNES/agents/` (The Personas & Workspaces)**
-
 * **What goes here:** The explicit definitions and isolated sandboxes for your workforce.
 * **Mapped from Codeman:** `AGENTS.md`, `src/templates/` (and the logic for parsing `SOUL.md`/`IDENTITY.md`).
 * **Function:** This holds the dedicated directories for `axxbot/`, `noid/`, `execubot/`, `dobot/`, and `pubbot/`. Their memory databases and lane contracts live strictly here.
 
 **4. `AXXANOID_HARNES/axx_env/` (The Python Engine Room)**
-
 * **What goes here:** Your isolated Python virtual environment.
 * **Function:** Because `Codeman` is a Node.js framework, we use `axx_env` to sandbox your actual Python execution. When Noid writes a script or ExecuBot runs `master_cron.py` (the Stoner Grifts), it is executed explicitly inside this secure `axx_env` context.
 
 **5. `AXXANOID_HARNES/tools/` & `AXXANOID_HARNES/skills/`**
-
 * **What goes here:** The physical execution scripts and skill definitions.
 * **Mapped from Codeman:** `skills/codeman/`, `src/bash-tool-parser.ts`, `src/file-stream-manager.ts`.
 * **Function:** Hardcoded, specific capabilities. `tools/` holds the raw execution logic (like a `healthcheck.py` script), while `skills/` holds the Markdown/JSON schemas that tell the AI *how* to use the tool.
 
 **6. `AXXANOID_HARNES/channels/` (The Input/Output)**
-
 * **What goes here:** Web interface, CLI, voice inputs, and external API webhooks.
 * **Mapped from Codeman:** `src/web/public/` (UI/CSS/JS), `src/cli.ts`, `src/web/voice-stream.ts`.
 * **Function:** The front-end. It takes your chat input or a webhook, formats it into a standard intent, and passes it to `app/`. If the UI crashes, the `app/` and `engine/` keep running natively in the background.
 
 **7. `AXXANOID_HARNES/configs/` & `AXXANOID_HARNES/api/`**
-
 * **What goes here:** System-wide rules, networking, and internal routing.
 * **Mapped from Codeman:** `src/config/`, `src/web/routes/`.
 * **Function:** Manages the ports (like `18789` for the UI), token authentication, max concurrency limits, and REST endpoints for your agents to talk to each other.
 
+### END Axxanoid Harness: Architecture Map
+
+### Axxanoid Harness: Build concepts and discoveries
 ---
 By stripping the Codeman source code down to its purest parts and rebuilding it into the Axxanoid Harness, you get an enterprise-grade async router that you control 100%.
----
+
 The TS-to-Python Bridge (How it will work)
 Before we write a line of code, we need to establish the contract between the Head (TypeScript) and the Hands (Python).
 
@@ -72,14 +128,11 @@ spawn('AXXANOID_HARNES/axx_env/bin/python', ['tools/master_cron.py', ...args]).
 
 The Return: The TS core listens to the stdout (standard output) of that Python script, captures the result, and posts it back to the Kanban board.
 ---
-* **Phase 1: Laying the Foundation**
-* Because this is a massive refactor, we are going to build it from the ground up, starting with the bare-bones infrastructure. No bloat.*
-* *The Skeleton Directories: Physically creating the .AXXANOID_HARNES folder structure you mapped out.*
-* *The Python Sandbox: Creating the axx_env/ virtual environment inside the harness directory so we have our isolated execution room ready.*
-* *The Project Init: Setting up the base package.json and tsconfig.json to support modern TypeScript and Node features.*
+### END Axxanoid Harness: Build concepts and discoveries
 
+### Axxanoid Harness: Build & Refactor Tracker
+*Live section tracking of steps taken* 
 
-# Build & Refactor Tracker
 * Step 1: Scaffold the Directory Tree -- done
 * Step 2: Initialize the TypeScript Foundation -- done
 cd ~/AXXANOID_HARNES
@@ -105,7 +158,7 @@ hf download Qwen/Qwen2.5-Coder-14B-Instruct-GGUF qwen2.5-coder-14b-instruct-q4_k
 Create AXXANOID_HARNES/engine/models.ini
 Create AXXANOID_HARNES/engine/start-engine.sh
 
-* *Verification*
+* Verification
 Jeremys-MacBook-Pro: ~/axxanoid_harnes % npm run dev
 > axxanoid_harnes@1.0.0 dev
 > tsx watch app/main.ts
@@ -113,7 +166,7 @@ Jeremys-MacBook-Pro: ~/axxanoid_harnes % npm run dev
 >>> Booting Axxanoid Harness ....
 >>> API Listening on http://127.0.0.1:8000
 >>> [SYSTEM] Initializing background heartbeat...***
-* *END Verification*
+* END Verification
 
 * Step 5: The Orchestrator Loop
 Shared SQLite is the most robust choice. It allows your TypeScript orchestrator and Python execution scripts inside axx_env to read and write state directly to a single file (memory.db) without context pollution or network overhead.
@@ -126,16 +179,34 @@ npm install --save-dev @types/better-sqlite3
 * Step 5c: Connect Schema to Server Boot (app/main.ts)
 --- living ---
 
+### End Axxanoid Harness: Build & Refactor Tracker - detailed
+
+### Axxanoid Harness: Build & Refactor Tracker - Overview
 ## Current State
 - Architecture officially transitioned from OpenClaw to a custom TypeScript/Python hybrid harness.
 - Models locked: `Llama-3-Groq-8B-Tool-Use` (Routing) & `Qwen2.5-Coder-14B` (Execution).
 - Engine locked: `llama.cpp` (`llama-server`) running concurrently with compressed KV cache.
+- Database locked: Shared SQLite database running in Write-Ahead Logging (WAL) mode (`memory.db`).
 
 ## To-Do List (Next Actions)
 - [X] **Step 1:** Scaffold the `AXXANOID_HARNES` physical directory structure.
 - [X] **Step 2:** Initialize the TypeScript foundation (`package.json`, `tsconfig.json`).
 - [X] **Step 3:** Establish the Python execution sandbox (`axx_env`).
-- [ ] **Step 4:** Write the `models.ini` and `start-engine.sh` files to stabilize the engine layer.
-- [ ] **Step 5:** Port the base `Codeman` async orchestrator loop into the `app/` directory.
+- [X] **Step 4:** Write `models.ini` and `start-engine.sh` with portable relative paths.
+- [ ] **Step 5: Workboard State & Orchestrator Implementation**
+  - [X] **Step 5a:** Initialize SQLite schema in WAL mode (`app/database.ts`).
+  - [ ] **Step 5b:** Write task dispatch orchestrator (`app/orchestrator.ts`).
+  - [ ] **Step 5c:** Connect orchestrator loop to server lifespan (`app/main.ts`).
 - [ ] **Step 6:** Build the `engine/` translation layer to parse `llama.cpp` JSON schemas natively.
 
+## Completed Log
+- [x] Defined Virtual Company Tiered Roster
+- [x] Defined Hardware/Engine resource allocations
+- [x] Established core documentation files (`README.md`, `END-TO-END.md`, `BUILD.md`)
+- [x] Ported FastAPI daemon lifecycle to Express TS daemon (`app/main.ts`)
+- [x] Ported Python audit runner to TypeScript-Python bridge (`app/daemon-control.ts`)
+- [x] Created `engine/models.ini` and `engine/start-engine.sh`
+- [x] Installed `better-sqlite3` and `@types/better-sqlite3`
+- [x] Configured SQLite WAL mode schema for multi-process safety (`app/database.ts`)
+
+### End Axxanoid Harness: Build & Refactor Tracker - Overview

@@ -15,8 +15,32 @@
    - `hf download bartowski/Llama-3-Groq-8B-Tool-Use-GGUF Llama-3-Groq-8B-Tool-Use-Q4_K_M.gguf --local-dir AXXANOID_HARNES/engine/models`
    - `hf download Qwen/Qwen2.5-Coder-14B-Instruct-GGUF qwen2.5-coder-14b-instruct-q4_k_m.gguf --local-dir AXXANOID_HARNES/engine/models`
 
-## Phase 3: Harness Configuration 
-*(To be updated as we build the scaffolding commands...)*
+## Phase 3: Harness Configuration & Database Initialization
+1. Clone Repository & Navigate:
+   `git clone git@github.com:justjon09/axxanoid_harness.git && cd axxanoid_harness`
+2. Install Node Dependencies:
+   `npm install`
+3. Install Database & Types:
+   `npm install better-sqlite3 && npm install --save-dev @types/better-sqlite3`
+4. Establish Isolated Python Sandbox:
+   `python3 -m venv axx_env`
+5. Database Schema Boot:
+   The SQLite Workboard database (`memory.db`) and WAL transaction log (`memory.db-wal`) are created and configured in WAL mode automatically upon booting the daemon via `app/database.ts`.
 
-## Phase 4: Execution 
-*(To be updated as we finalize the boot sequence...)*
+## Phase 4: System Boot
+1. Terminal Slot 1 (Start LLM Engine):
+   `chmod +x engine/start-engine.sh && ./engine/start-engine.sh`
+2. Terminal Slot 2 (Start Axxanoid OS Daemon):
+   `npm run dev`
+
+## Phase 5: Select or configure agents 
+*(To be updated as we build...)*
+
+## Phase 6: Terminal interaction
+*(To be updated as we build...)*
+
+## Phase 7: UI interaction 
+*(To be updated as we build...)*
+
+## Phase 8: UI and CLI controls 
+*(To be updated as we build...)*
