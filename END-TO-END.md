@@ -9,11 +9,11 @@
 4. Install HuggingFace CLI: `brew install huggingface-cli`
 
 ## Phase 2: Engine & Model Acquisition
-1. Install Engine: `brew install llama.cpp`
-2. Create Model Directory: `mkdir -p ~/.openclaw/models` (or harness specific dir)
+1. Install Engine: `brew install llama.cpp` (This provides the required `llama-server` binary).
+2. Create Model Directory: `mkdir -p AXXANOID_HARNES/engine/models`
 3. Download Models:
-   - `hf download bartowski/Llama-3-Groq-8B-Tool-Use-GGUF Llama-3-Groq-8B-Tool-Use-Q4_K_M.gguf --local-dir ~/.openclaw/models`
-   - `hf download Qwen/Qwen2.5-Coder-14B-Instruct-GGUF qwen2.5-coder-14b-instruct-q4_k_m.gguf --local-dir ~/.openclaw/models`
+   - `hf download bartowski/Llama-3-Groq-8B-Tool-Use-GGUF Llama-3-Groq-8B-Tool-Use-Q4_K_M.gguf --local-dir AXXANOID_HARNES/engine/models`
+   - `hf download Qwen/Qwen2.5-Coder-14B-Instruct-GGUF qwen2.5-coder-14b-instruct-q4_k_m.gguf --local-dir AXXANOID_HARNES/engine/models`
 
 ## Phase 3: Harness Configuration 
 *(To be updated as we build the scaffolding commands...)*

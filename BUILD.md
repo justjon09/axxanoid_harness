@@ -92,15 +92,22 @@ package.json - replace the "scripts" block
 * Step 3: Establish the Python Execution Sandbox
 python3 -m venv axx_env
 
+create /app/main.ts (port of main.py)
+create /app/deamon-controler.ts (port of app_heartbeat.py)
 
+* Step 4: The Engine Lock-In (models.ini & start-engine.sh)
+download the exact locked-in models directly
 
+hf download bartowski/Llama-3-Groq-8B-Tool-Use-GGUF Llama-3-Groq-8B-Tool-Use-Q4_K_M.gguf --local-dir .AXXANOID_HARNES/engine/models
 
+hf download Qwen/Qwen2.5-Coder-14B-Instruct-GGUF qwen2.5-coder-14b-instruct-q4_k_m.gguf --local-dir .AXXANOID_HARNES/engine/models
 
+Create AXXANOID_HARNES/engine/models.ini
+Create AXXANOID_HARNES/engine/start-engine.sh
 
-
-
-
-
+* *Verification*
+AXXANOID_HARNES, run:
+npm run dev
 
 --- living ---
 
