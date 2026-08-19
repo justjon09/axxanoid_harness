@@ -44,5 +44,7 @@ pnpm-debug.log*
 # Harnes Holdbacks
 engine/models
 engine/models/*
-memory.db
-memory.db*
+# SQLite Database & WAL transaction files
+*.db
+*.db-wal
+*.db-shm

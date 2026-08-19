@@ -139,7 +139,3 @@ npm install --save-dev @types/better-sqlite3
 - [ ] **Step 5:** Port the base `Codeman` async orchestrator loop into the `app/` directory.
 - [ ] **Step 6:** Build the `engine/` translation layer to parse `llama.cpp` JSON schemas natively.
 
-## Completed Log
-- [x] Defined Virtual Company Tiered Roster
-- [x] Defined Hardware/Engine resource allocations
-- [x] Established core documentation files
