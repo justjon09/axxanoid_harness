@@ -128,6 +128,42 @@ spawn('AXXANOID_HARNES/axx_env/bin/python', ['tools/master_cron.py', ...args]).
 
 The Return: The TS core listens to the stdout (standard output) of that Python script, captures the result, and posts it back to the Kanban board.
 ---
+To make the translation layer universally extensible, its architecture must decouple schema ingestion from model-specific prompt rendering. This design allows open-source standards—such as OpenAI function calling schemas or Model Context Protocol (MCP) tool definitions—to plug in seamlessly alongside local harness skills without modifying core agent logic.
+
+Modular Translation Layer Architecture
+
+1. Inbound Ingestion Layer (Universal Schema Registry)
+
+OpenAI & MCP Schema Adapter: Normalizes external tool definitions (OpenAI Function JSON, MCP Server tool capabilities, and Custom Skill Specs) into a single, unified HarnessToolDefinition interface.
+
+Skill vs. Tool Classifier: Differentiates atomic execution primitives (Tools, e.g., terminal commands or file reads) from multi-step composite workflows (Skills, e.g., repo refactoring or automated code auditing).
+
+2. Outbound Compiler Layer (Model-Specific Prompting)
+
+Chat Template & Context Formatter: Maps conversation history into exact model template syntaxes (Llama-3 Jinja formatting for AxxBot routing vs. Qwen ChatML XML/JSON formatting for Tier 2 execution).
+
+Grammar & Schema Injection: Compiles registered tools and expected outputs into json_schema constraints for llama-server, enforcing structured outputs at the inference engine level.
+
+3. Response Interceptor & Action Parser
+
+Completion Parser: Intercepts raw completions—whether returned as strict JSON, markdown code blocks, or embedded prose—and normalizes them into a unified AgentAction result.
+
+Payload Router: Directs parsed outputs into four distinct execution channels:
+
+Tool/Skill Execution: Dispatches parameters to tools/executor.ts.
+
+Workboard Mutation: Converts card creation and status update intents into validated SQLite payloads for memory.db.
+
+Sub-Agent Delegation: Passes child task contexts down to Tier 2/3 workers.
+
+User Message: Delivers final aggregated reports back to the CEO.
+
+4. Open-Source Extensibility Strategy
+
+Standard Schema Compliance: Uses JSON Schema Draft 7 as the baseline, making the harness compatible with any open-source AI tool library.
+
+Execution Boundary Isolation: Keeps external tool dependencies inside the axx_env Python sandbox or isolated TypeScript wrappers, ensuring third-party tools cannot pollute the core orchestrator.
+---
 ### END Axxanoid Harness: Build concepts and discoveries
 
 ### Axxanoid Harness: Build & Refactor Tracker
@@ -201,6 +237,11 @@ Jeremys-MacBook-Pro: ~/axxanoid_harnes % npm run dev
 11:32:58 AM [tsx] Previous process hasn't exited yet. Force killing...
 Jeremys-MacBook-Pro: ~/axxanoid_harnes % 
 * END Verification
+
+* Step 6a:** Create HTTP client targeting `llama-server` on port `8080` (`engine/llama-client.ts`).
+* Step 6b:** Build schema translator & response interceptor (`engine/translator.ts`).
+    updated orchestrator with process task
+
 --- living ---
 
 ### End Axxanoid Harness: Build & Refactor Tracker - detailed
@@ -211,17 +252,31 @@ Jeremys-MacBook-Pro: ~/axxanoid_harnes %
 - Models locked: `Llama-3-Groq-8B-Tool-Use` (Routing) & `Qwen2.5-Coder-14B` (Execution).
 - Engine locked: `llama.cpp` (`llama-server`) running concurrently with compressed KV cache.
 - Database locked: Shared SQLite database running in Write-Ahead Logging (WAL) mode (`memory.db`).
+- Task Orchestrator active: 5-second pulse loop sweeping Workboard cards and resolving dependency chains automatically (Domino Effect).
 
 ## To-Do List (Next Actions)
 - [X] **Step 1:** Scaffold the `AXXANOID_HARNES` physical directory structure.
 - [X] **Step 2:** Initialize the TypeScript foundation (`package.json`, `tsconfig.json`).
 - [X] **Step 3:** Establish the Python execution sandbox (`axx_env`).
 - [X] **Step 4:** Write `models.ini` and `start-engine.sh` with portable relative paths.
-- [ ] **Step 5: Workboard State & Orchestrator Implementation**
+- [X] **Step 5: Workboard State & Orchestrator Implementation**
   - [X] **Step 5a:** Initialize SQLite schema in WAL mode (`app/database.ts`).
   - [X] **Step 5b:** Write task dispatch orchestrator (`app/orchestrator.ts`).
   - [X] **Step 5c:** Connect orchestrator loop to server lifespan (`app/main.ts`).
-- [ ] **Step 6:** Build the `engine/` translation layer to parse `llama.cpp` JSON schemas natively.
+- [ ] **Step 6: Engine Client & Schema Translation Layer (`engine/`)**
+  - [X] **Step 6a:** Create HTTP client targeting `llama-server` on port `8080` (`engine/llama-client.ts`).
+  - [X] **Step 6b:** Build schema translator & response interceptor (`engine/translator.ts`).
+  - [ ] **Step 6c:** Wire ready task execution dispatch in `app/orchestrator.ts` to `engine/llama-client.ts`.
+- [ ] **Step 7: Workforce Definitions & Permission Scoping (`agents/`)**
+  - [ ] **Step 7a:** Scaffold agent directories (`axxbot/`, `noid/`, `execubot/`, `dobot/`, `pubbot/`).
+  - [ ] **Step 7b:** Write directive templates (`SOUL.md`, `IDENTITY.md`, `CAPABILITIES.md`, `WORKSPACE/`).
+  - [ ] **Step 7c:** Enforce permission contracts (`contracts.json` per agent).
+- [ ] **Step 8: Standardized Skills & Tools Framework (`skills/` & `tools/`)**
+  - [ ] **Step 8a:** Build skill schema template (`skills/template.json`) and open-source tool adapter.
+  - [ ] **Step 8b:** Implement secure execution wrapper targeting `axx_env` (`tools/executor.ts`).
+- [ ] **Step 9: CLI Controls & Interactive CEO Terminal (`channels/cli.ts`)**
+- [ ] **Step 10: Web UI Dashboard, REST API & Control Panel (`api/` & `channels/web/`)**
+- [ ] **Step 11: End-to-End Validation & Playbook Verification**
 
 ## Completed Log
 - [x] Defined Virtual Company Tiered Roster
@@ -232,5 +287,7 @@ Jeremys-MacBook-Pro: ~/axxanoid_harnes %
 - [x] Created `engine/models.ini` and `engine/start-engine.sh`
 - [x] Installed `better-sqlite3` and `@types/better-sqlite3`
 - [x] Configured SQLite WAL mode schema for multi-process safety (`app/database.ts`)
+- [x] Implemented Task Dispatch Orchestrator (`app/orchestrator.ts`) with automatic dependency chain resolution
+- [x] Wired 5-second Orchestrator pulse loop and 15-minute Heartbeat pulse loop to Express server lifespan (`app/main.ts`)
 
 ### End Axxanoid Harness: Build & Refactor Tracker - Overview
