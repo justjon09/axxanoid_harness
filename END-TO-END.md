@@ -27,6 +27,20 @@
 4. Database Schema Boot:
    The SQLite Workboard database (`memory.db`) and WAL transaction log (`memory.db-wal`) are created and configured in WAL mode automatically upon booting the daemon via `app/database.ts`.
 
+
+
+
+
+
+***WE NEED TO ADD RUNNING harnes-test HERE*** 
+// npx tsx scripts/harnes-test/translator.ts and expected result
+// npx tsx scripts/harnes-test/seed-dependency.ts and expected result
+Then start the daemon (npm run dev). Within 5 seconds, the Orchestrator pulse will log:
+>>> [ORCHESTRATOR] Unblocked card "Test API Endpoints" (child-1) -> Promoted to READY
+bash ~/axxanoid_harnes/engine/start-engine.sh and ecpected result
+curl http://127.0.0.1:8080/health    and expected result
+
+
 ## Phase 4: System Boot
 1. Terminal Slot 1 (Start LLM Engine):
    `chmod +x engine/start-engine.sh && ./engine/start-engine.sh`

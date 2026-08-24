@@ -241,6 +241,138 @@ Jeremys-MacBook-Pro: ~/axxanoid_harnes %
 * Step 6a:** Create HTTP client targeting `llama-server` on port `8080` (`engine/llama-client.ts`).
 * Step 6b:** Build schema translator & response interceptor (`engine/translator.ts`).
     updated orchestrator with process task
+* **TESTING TO DEFINED**
+test schema normalization and response parsing without running the LLM engine.
+- test script scripts/harnes-test/translator.ts
+   * *Result* *
+     Jeremys-MacBook-Pro: ~/axxanoid_harnes % npx tsx scripts/harnes-test/translator.ts
+        Normalized Tool: {
+        name: 'execute_terminal',
+        description: 'Run terminal command in sandbox',
+        type: 'tool',
+        parameters: {
+            command: { type: 'string', description: 'Bash command', required: true }
+        },
+        handler_type: 'typescript'
+        }
+        Parsed Markdown Action: {
+        type: 'tool_call',
+        target: 'execute_terminal',
+        payload: { command: 'ls -la' },
+        raw_response: 'Here is my response:\n' +
+            '```json\n' +
+            '{\n' +
+            '  "type": "tool_call",\n' +
+            '  "target": "execute_terminal",\n' +
+            '  "payload": { "command": "ls -la" }\n' +
+            '}\n' +
+            '```'
+        }
+        Parsed Plain Text Action: {
+        type: 'user_message',
+        payload: { content: 'Task completed successfully without tools.' },
+        raw_response: 'Task completed successfully without tools.'
+        }
+    * *END Result* *
+test the Orchestrator's ability to resolve parent-child dependencies
+- test script scripts/harnes-test/seed-dependency.ts
+* *Result* *
+    Jeremys-MacBook-Pro: ~/axxanoid_harnes % npx tsx scripts/harnes-test/seed-dependency.ts 
+    Seeded parent-1 (done) and child-1 (blocked). Start server (`npm run dev`) to watch child-1 promote to READY.
+* *END Result* *
+Then start the daemon (npm run dev). Within 5 seconds, the Orchestrator pulse will log:
+>>> [ORCHESTRATOR] Unblocked card "Test API Endpoints" (child-1) -> Promoted to READY
+* *Result* *
+    Jeremys-MacBook-Pro: ~/axxanoid_harnes % npm run dev
+
+        > axxanoid_harnes@1.0.0 dev
+        > tsx watch app/main.ts
+
+        >>> [DATABASE] Shared SQLite Workboard schema initialized in WAL mode.
+        >>> Booting Axxanoid Harness ....
+        >>> API Listening on http://127.0.0.1:8000
+        >>> [SYSTEM] Initializing startup heartbeat...
+        >>> [HEARTBEAT] Wake sequence initiated. Ingesting core directives into RAM...
+        >>> [HEARTBEAT WARNING] Missing directive file: SOUL.md. Skipping.
+        >>> [HEARTBEAT WARNING] Missing directive file: IDENTITY.md. Skipping.
+        >>> [HEARTBEAT WARNING] Missing directive file: HUMAN.md. Skipping.
+        >>> [HEARTBEAT WARNING] Missing directive file: HEARTBEAT.md. Skipping.
+        >>> [HEARTBEAT] Executing dynamic audits from HEARTBEAT.md...
+        >>> [HEARTBEAT] Audit complete. Ready for Engine Inference.
+        >>> [SYSTEM] Initializing background heartbeat (15m pulse)...
+        >>> [SYSTEM] Initializing Workboard Orchestrator (5s pulse)...
+        >>> [ORCHESTRATOR] Unblocked card "Test API Endpoints" (child-1) -> Promoted to READY
+        >>> [ORCHESTRATOR] Found 1 READY task(s) on Workboard.
+            -> [CARD child-1] Assigned to: DOBOT | Title: "Test API Endpoints"
+        >>> [ORCHESTRATOR] Processing Task [child-1] with Assignee [DOBOT]
+        >>> [ENGINE CLIENT ERROR] Failed to communicate with llama-server: fetch failed
+        >>> [ORCHESTRATOR] Task [child-1] Execution Failed: fetch failed
+        ^C
+        >>> [SYSTEM] Shutting down daemon, Terminating heartbeat...
+* *END Result* *
+test HTTP connectivity.
+- Start Engine (Terminal 1):  bash ~/axxanoid_harnes/engine/start-engine.sh 
+* *Result* *
+    Jeremys-MacBook-Pro: ~ % bash ~/axxanoid_harnes/engine/start-engine.sh
+        Starting dual-slot llama-server engine on port 8080...
+        0.00.052.483 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+        0.00.053.565 I srv   load_models: Loaded 0 cached model presets
+        0.00.054.010 I srv   load_models: Loaded 2 custom model presets from /Users/justjon09/axxanoid_harnes/engine/models.ini
+        0.00.054.067 I srv    operator(): Available models (2) (*: custom preset)
+        0.00.054.068 I srv    operator():   * llama-3-groq-8b-tool-use
+        0.00.054.068 I srv    operator():   * qwen2.5-coder-14b-instruct
+        0.00.054.147 W srv  llama_server: -----------------
+        0.00.054.148 W srv  llama_server: CORS is set to allow all origins ('*') and no API key is set
+        0.00.054.148 W srv  llama_server: this can be a security risk (cross-origin attacks)
+        0.00.054.148 W srv  llama_server: more info: https://github.com/ggml-org/llama.cpp/pull/25655
+        0.00.054.148 W srv  llama_server: -----------------
+        0.00.054.159 W srv  llama_server: -----------------
+        0.00.054.159 W srv  llama_server: the following feature(s) are enabled:
+        0.00.054.159 W srv  llama_server:     router mode
+        0.00.054.159 W srv  llama_server: do not expose the server to untrusted environments
+        0.00.054.159 W srv  llama_server: -----------------
+        0.00.054.159 I srv  llama_server: starting server in router mode. models will be automatically loaded on-demand
+        0.00.055.536 I srv  llama_server: listening on http://127.0.0.1:8080
+        0.00.055.539 W srv  llama_server: NOTICE: server default port will be changed to :9931 in a future release
+        0.00.055.539 W srv  llama_server:         ref: https://github.com/ggml-org/llama.cpp/pull/26508
+* *END Result* *
+- Test Health in Terminal 2: curl http://127.0.0.1:8080/health
+* *Result* *
+    Jeremys-MacBook-Pro: ~/axxanoid_harnes % curl http://127.0.0.1:8080/health             
+    {"status":"ok"}%  
+* *END Result* *
+test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or failed):
+- Seed a ready Task:
+        npx tsx -e "import { db } from './app/database.ts'; db.prepare(\"INSERT INTO workboard_cards (id, title, description, assignee, status) VALUES ('task-101', 'Write a hello world script', 'Create a simple python hello world script', 'noid', 'ready')\").run();"
+    npm run dev
+* *Result* *
+    Jeremys-MacBook-Pro: ~/axxanoid_harnes % npm run dev
+
+        > axxanoid_harnes@1.0.0 dev
+        > tsx watch app/main.ts
+
+        >>> [DATABASE] Shared SQLite Workboard schema initialized in WAL mode.
+        >>> Booting Axxanoid Harness ....
+        >>> API Listening on http://127.0.0.1:8000
+        >>> [SYSTEM] Initializing startup heartbeat...
+        >>> [HEARTBEAT] Wake sequence initiated. Ingesting core directives into RAM...
+        >>> [HEARTBEAT WARNING] Missing directive file: SOUL.md. Skipping.
+        >>> [HEARTBEAT WARNING] Missing directive file: IDENTITY.md. Skipping.
+        >>> [HEARTBEAT WARNING] Missing directive file: HUMAN.md. Skipping.
+        >>> [HEARTBEAT WARNING] Missing directive file: HEARTBEAT.md. Skipping.
+        >>> [HEARTBEAT] Executing dynamic audits from HEARTBEAT.md...
+        >>> [HEARTBEAT] Audit complete. Ready for Engine Inference.
+        >>> [SYSTEM] Initializing background heartbeat (15m pulse)...
+        >>> [SYSTEM] Initializing Workboard Orchestrator (5s pulse)...
+        >>> [ORCHESTRATOR] Found 1 READY task(s) on Workboard.
+            -> [CARD task-101] Assigned to: NOID | Title: "Write a hello world script"
+        >>> [ORCHESTRATOR] Processing Task [task-101] with Assignee [NOID]
+        >>> [ENGINE CLIENT ERROR] Failed to communicate with llama-server: llama-server returned HTTP 400: {"error":{"code":400,"message":"model 'qwen_coder' not found","type":"invalid_request_error"}}
+        >>> [ORCHESTRATOR] Task [task-101] Execution Failed: llama-server returned HTTP 400: {"error":{"code":400,"message":"model 'qwen_coder' not found","type":"invalid_request_error"}}
+        ^C
+        >>> [SYSTEM] Shutting down daemon, Terminating heartbeat...
+        12:14:41 PM [tsx] Previous process hasn't exited yet. Force killing...
+* *END Result* *
 
 --- living ---
 

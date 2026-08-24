@@ -8,7 +8,7 @@
 echo "Starting dual-slot llama-server engine on port 8080..."
 
 llama-server \
-  --models-preset ./models.ini \
+  --models-preset ~/axxanoid_harnes/engine/models.ini \
   --port 8080 \
   -np 2 \
   -fa 1 \
