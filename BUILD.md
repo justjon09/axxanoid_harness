@@ -373,6 +373,222 @@ test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or fai
         >>> [SYSTEM] Shutting down daemon, Terminating heartbeat...
         12:14:41 PM [tsx] Previous process hasn't exited yet. Force killing...
 * *END Result* *
+Minor updates to orchestrator 
+
+test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or failed):
+- Seed a ready Task:
+        npx tsx -e "import { db } from './app/database.ts'; db.prepare(\"INSERT INTO workboard_cards (id, title, description, assignee, status) VALUES ('task-102', 'Write a hello world script', 'Create a simple python hello world script', 'noid', 'ready')\").run();"
+    npm run dev
+* *Result* *
+    Jeremys-MacBook-Pro: ~/axxanoid_harnes % npm run dev
+
+        > axxanoid_harnes@1.0.0 dev
+        > tsx watch app/main.ts
+
+        >>> [DATABASE] Shared SQLite Workboard schema initialized in WAL mode.
+        >>> Booting Axxanoid Harness ....
+        >>> API Listening on http://127.0.0.1:8000
+        >>> [SYSTEM] Initializing startup heartbeat...
+        >>> [HEARTBEAT] Wake sequence initiated. Ingesting core directives into RAM...
+        >>> [HEARTBEAT WARNING] Missing directive file: SOUL.md. Skipping.
+        >>> [HEARTBEAT WARNING] Missing directive file: IDENTITY.md. Skipping.
+        >>> [HEARTBEAT WARNING] Missing directive file: HUMAN.md. Skipping.
+        >>> [HEARTBEAT WARNING] Missing directive file: HEARTBEAT.md. Skipping.
+        >>> [HEARTBEAT] Executing dynamic audits from HEARTBEAT.md...
+        >>> [HEARTBEAT] Audit complete. Ready for Engine Inference.
+        >>> [SYSTEM] Initializing background heartbeat (15m pulse)...
+        >>> [SYSTEM] Initializing Workboard Orchestrator (5s pulse)...
+        >>> [ORCHESTRATOR] Found 1 READY task(s) on Workboard.
+            -> [CARD task-102] Assigned to: NOID | Title: "Write a hello world script"
+        >>> [ORCHESTRATOR] Processing Task [task-102] with Assignee [NOID]
+        >>> [ORCHESTRATOR] Task [task-102] Execution Failed: formatPromptForModel is not defined
+        ^C
+        >>> [SYSTEM] Shutting down daemon, Terminating heartbeat...
+        12:43:30 PM [tsx] Previous process hasn't exited yet. Force killing...
+* *END Result* *
+Minor updates to orchestrator Again
+
+test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or failed):
+- Seed a ready Task:
+        npx tsx -e "import { db } from './app/database.ts'; db.prepare(\"INSERT INTO workboard_cards (id, title, description, assignee, status) VALUES ('task-103', 'Write a hello world script', 'Create a simple python hello world script', 'noid', 'ready')\").run();"
+    npm run dev
+* *Result* *
+    Jeremys-MacBook-Pro: ~/axxanoid_harnes % npm run dev
+
+        > axxanoid_harnes@1.0.0 dev
+        > tsx watch app/main.ts
+
+        >>> [DATABASE] Shared SQLite Workboard schema initialized in WAL mode.
+        >>> Booting Axxanoid Harness ....
+        >>> API Listening on http://127.0.0.1:8000
+        >>> [SYSTEM] Initializing startup heartbeat...
+        >>> [HEARTBEAT] Wake sequence initiated. Ingesting core directives into RAM...
+        >>> [HEARTBEAT WARNING] Missing directive file: SOUL.md. Skipping.
+        >>> [HEARTBEAT WARNING] Missing directive file: IDENTITY.md. Skipping.
+        >>> [HEARTBEAT WARNING] Missing directive file: HUMAN.md. Skipping.
+        >>> [HEARTBEAT WARNING] Missing directive file: HEARTBEAT.md. Skipping.
+        >>> [HEARTBEAT] Executing dynamic audits from HEARTBEAT.md...
+        >>> [HEARTBEAT] Audit complete. Ready for Engine Inference.
+        >>> [SYSTEM] Initializing background heartbeat (15m pulse)...
+        >>> [SYSTEM] Initializing Workboard Orchestrator (5s pulse)...
+        >>> [ORCHESTRATOR] Found 1 READY task(s) on Workboard.
+            -> [CARD task-103] Assigned to: NOID | Title: "Write a hello world script"
+        >>> [ORCHESTRATOR] Processing Task [task-103] with Assignee [NOID]
+        >>> [ENGINE CLIENT ERROR] Failed to communicate with llama-server: llama-server returned HTTP 500: {"error":{"code":500,"message":"model name=qwen2.5-coder-14b-instruct failed to load","type":"server_error"}}
+        >>> [ORCHESTRATOR] Task [task-103] Execution Failed: llama-server returned HTTP 500: {"error":{"code":500,"message":"model name=qwen2.5-coder-14b-instruct failed to load","type":"server_error"}}
+        ^C
+        >>> [SYSTEM] Shutting down daemon, Terminating heartbeat...
+        2:41:50 PM [tsx] Previous process hasn't exited yet. Force killing...
+    ---
+    llama result:
+    [50534] 0.00.053.440 E llama_model_load_from_file_impl: failed to load model
+    [50534] 0.00.053.441 E cmn  common_init_: failed to load model './models/qwen2.5-coder-14b-instruct-q4_k_m.gguf'
+    [50534] 0.00.053.441 E srv    load_model: failed to load model, './models/qwen2.5-coder-14b-instruct-q4_k_m.gguf'
+    [50534] 0.00.053.442 I srv    operator(): operator(): cleaning up before exit...
+    [50534] 0.00.053.641 E srv  llama_server: exiting due to model loading error
+    153.27.331.039 I srv    operator(): instance name=qwen2.5-coder-14b-instruct exited with status 1
+    153.27.331.179 W srv    operator(): got exception: {"error":{"code":500,"message":"model name=qwen2.5-coder-14b-instruct failed to load","type":"server_error"}}
+
+* *END Result* *
+
+cd "$(dirname "$0")" -- added to start engin
+
+test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or failed):
+- Seed a ready Task:
+        npx tsx -e "import { db } from './app/database.ts'; db.prepare(\"INSERT INTO workboard_cards (id, title, description, assignee, status) VALUES ('task-104', 'Write a hello world script', 'Create a simple python hello world script', 'noid', 'ready')\").run();"
+    npm run dev
+* *Result* *
+    Jeremys-MacBook-Pro: ~/axxanoid_harnes % npm run dev
+
+        > axxanoid_harnes@1.0.0 dev
+        > tsx watch app/main.ts
+
+        >>> [DATABASE] Shared SQLite Workboard schema initialized in WAL mode.
+        >>> Booting Axxanoid Harness ....
+        >>> API Listening on http://127.0.0.1:8000
+        >>> [SYSTEM] Initializing startup heartbeat...
+        >>> [HEARTBEAT] Wake sequence initiated. Ingesting core directives into RAM...
+        >>> [HEARTBEAT WARNING] Missing directive file: SOUL.md. Skipping.
+        >>> [HEARTBEAT WARNING] Missing directive file: IDENTITY.md. Skipping.
+        >>> [HEARTBEAT WARNING] Missing directive file: HUMAN.md. Skipping.
+        >>> [HEARTBEAT WARNING] Missing directive file: HEARTBEAT.md. Skipping.
+        >>> [HEARTBEAT] Executing dynamic audits from HEARTBEAT.md...
+        >>> [HEARTBEAT] Audit complete. Ready for Engine Inference.
+        >>> [SYSTEM] Initializing background heartbeat (15m pulse)...
+        >>> [SYSTEM] Initializing Workboard Orchestrator (5s pulse)...
+        >>> [ORCHESTRATOR] Found 1 READY task(s) on Workboard.
+            -> [CARD task-104] Assigned to: NOID | Title: "Write a hello world script"
+        >>> [ORCHESTRATOR] Processing Task [task-104] with Assignee [NOID]
+        >>> [ORCHESTRATOR] Task [task-104] Completed Successfully.
+        ^C
+        >>> [SYSTEM] Shutting down daemon, Terminating heartbeat...
+        2:51:30 PM [tsx] Previous process hasn't exited yet. Force killing...
+    ---
+    llama result:
+        2.33.871.949 I srv  ensure_model: model name=qwen2.5-coder-14b-instruct is not loaded, loading...
+        2.33.872.019 I srv          load: spawning server instance with name=qwen2.5-coder-14b-instruct on port 50566
+        2.33.872.032 I srv          load: spawning server instance with args:
+        2.33.872.034 I srv          load:   /opt/homebrew/Cellar/llama.cpp/10280/bin/llama-server
+        2.33.872.034 I srv          load:   --host
+        2.33.872.035 I srv          load:   127.0.0.1
+        2.33.872.035 I srv          load:   --jinja
+        2.33.872.035 I srv          load:   --port
+        2.33.872.035 I srv          load:   50566
+        2.33.872.035 I srv          load:   --alias
+        2.33.872.035 I srv          load:   qwen2.5-coder-14b-instruct
+        2.33.872.036 I srv          load:   --cache-type-k
+        2.33.872.036 I srv          load:   q8_0
+        2.33.872.036 I srv          load:   --cache-type-v
+        2.33.872.036 I srv          load:   q8_0
+        2.33.872.037 I srv          load:   --flash-attn
+        2.33.872.038 I srv          load:   1
+        2.33.872.038 I srv          load:   --model
+        2.33.872.038 I srv          load:   ./models/qwen2.5-coder-14b-instruct-q4_k_m.gguf
+        2.33.872.038 I srv          load:   --parallel
+        2.33.872.038 I srv          load:   2
+        2.33.872.372 I srv  ensure_model: waiting until model name=qwen2.5-coder-14b-instruct is fully loaded...
+        [50566] 0.00.047.233 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+        [50566] 0.00.047.407 W srv  llama_server: -----------------
+        [50566] 0.00.047.409 W srv  llama_server: CORS is set to allow all origins ('*') and no API key is set
+        [50566] 0.00.047.409 W srv  llama_server: this can be a security risk (cross-origin attacks)
+        [50566] 0.00.047.409 W srv  llama_server: more info: https://github.com/ggml-org/llama.cpp/pull/25655
+        [50566] 0.00.047.409 W srv  llama_server: -----------------
+        [50566] cmd_child_to_router:state:{"state":"loading","payload":{"stages":["text_model"],"current":"text_model","value":0.0}}
+        [50566] 0.00.048.845 I srv    load_model: loading model './models/qwen2.5-coder-14b-instruct-q4_k_m.gguf'
+        [50566] 0.00.370.649 W load: control-looking token: 128247 '</s>' was not control-type; this is probably a bug in the model. its type will be overridden
+        [50566] cmd_child_to_router:state:{"state":"loading","payload":{"stages":["text_model"],"current":"text_model","value":0.0}}
+        [50566] cmd_child_to_router:state:{"state":"loading","payload":{"stages":["text_model"],"current":"text_model","value":1.0}}
+        [50566] 0.06.658.714 W llama_context: n_ctx is not divisible by n_seq_max - rounding down to 89088
+        [50566] 0.10.804.686 I srv    load_model: initializing, n_slots = 2, n_ctx_slot = 44544, kv_unified = 'false'
+        [50566] 0.10.816.893 I srv  llama_server: model loaded
+        [50566] 0.10.817.234 I srv  llama_server: listening on http://127.0.0.1:50566
+        [50566] 0.10.817.440 I srv    operator(): child server monitoring thread started, waiting for EOF on stdin...
+        [50566] cmd_child_to_router:state:{"state":"ready","payload":{"id":"qwen2.5-coder-14b-instruct","aliases":["qwen2.5-coder-14b-instruct"],"tags":[],"object":"model","created":1787608262,"owned_by":"llamacpp","meta":{"vocab_type":2,"n_vocab":152064,"n_ctx":44544,"n_ctx_train":131072,"n_embd":5120,"n_params":14770033664,"size":8982142976,"ftype":"Q4_K - Medium"}}}
+        2.44.704.741 I srv  proxy_reques: proxying request to model qwen2.5-coder-14b-instruct on port 50566
+        [50566] 0.10.910.693 I slot get_availabl: id  1 | task -1 | selected slot by LRU, t_last = -1
+        [50566] 0.10.911.526 I slot launch_slot_: id  1 | task 0 | processing task, is_child = 0
+        [50566] 0.15.084.646 I slot print_timing: id  1 | task 0 | n_decoded =    100, tg =  25.91 t/s, tg_3s =  25.91 t/s
+        [50566] 0.16.178.884 I slot print_timing: id  1 | task 0 | prompt eval time =     313.79 ms /    46 tokens (    6.82 ms per token,   146.59 tokens per second)
+        [50566] 0.16.178.895 I slot print_timing: id  1 | task 0 |        eval time =    4953.52 ms /   128 tokens (   38.70 ms per token,    25.84 tokens per second)
+        [50566] 0.16.178.896 I slot print_timing: id  1 | task 0 |       total time =    5267.32 ms /   174 tokens
+        [50566] 0.16.178.896 I slot print_timing: id  1 | task 0 |    graphs reused =        127
+        [50566] 0.16.178.993 I slot      release: id  1 | task 0 | stop processing: n_tokens = 173, truncated = 0
+
+    ---
+    Task Result
+        Jeremys-MacBook-Pro: ~/axxanoid_harnes % npx tsx -e "import { db } from './app/database.ts'; const card = db.prepare(\"SELECT result_payload FROM workboard_cards WHERE id = 'task-104'\").get(); console.log(JSON.parse(card.result_payload));"
+        {
+        type: 'user_message',
+        payload: {
+            content: 'Certainly! Below is a simple Python script that prints "Hello, World!" to the console:\n' +
+            '\n' +
+            '```python\n' +
+            '# This is a simple Python script to print "Hello, World!"\n' +
+            '\n' +
+            'def main():\n' +
+            '    print("Hello, World!")\n' +
+            '\n' +
+            'if __name__ == "__main__":\n' +
+            '    main()\n' +
+            '```\n' +
+            '\n' +
+            'To run this script, you can save it to a file with a `.py` extension, for example, `hello_world.py`, and then execute it using a Python interpreter by running the following command in your terminal or command prompt:\n' +
+            '\n' +
+            '```bash\n' +
+            'python hello_world.py\n' +
+            '```\n' +
+            '\n' +
+            'This will output:\n' +
+            '\n' +
+            '```\n' +
+            'Hello, World!\n' +
+            '```'
+        },
+        raw_response: 'Certainly! Below is a simple Python script that prints "Hello, World!" to the console:\n' +
+            '\n' +
+            '```python\n' +
+            '# This is a simple Python script to print "Hello, World!"\n' +
+            '\n' +
+            'def main():\n' +
+            '    print("Hello, World!")\n' +
+            '\n' +
+            'if __name__ == "__main__":\n' +
+            '    main()\n' +
+            '```\n' +
+            '\n' +
+            'To run this script, you can save it to a file with a `.py` extension, for example, `hello_world.py`, and then execute it using a Python interpreter by running the following command in your terminal or command prompt:\n' +
+            '\n' +
+            '```bash\n' +
+            'python hello_world.py\n' +
+            '```\n' +
+            '\n' +
+            'This will output:\n' +
+            '\n' +
+            '```\n' +
+            'Hello, World!\n' +
+            '```'
+        }
+* *END Result* *
 
 --- living ---
 
@@ -398,7 +614,7 @@ test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or fai
 - [ ] **Step 6: Engine Client & Schema Translation Layer (`engine/`)**
   - [X] **Step 6a:** Create HTTP client targeting `llama-server` on port `8080` (`engine/llama-client.ts`).
   - [X] **Step 6b:** Build schema translator & response interceptor (`engine/translator.ts`).
-  - [ ] **Step 6c:** Wire ready task execution dispatch in `app/orchestrator.ts` to `engine/llama-client.ts`.
+  - [X] **Step 6c:** Wire ready task execution dispatch in `app/orchestrator.ts` to `engine/llama-client.ts`.
 - [ ] **Step 7: Workforce Definitions & Permission Scoping (`agents/`)**
   - [ ] **Step 7a:** Scaffold agent directories (`axxbot/`, `noid/`, `execubot/`, `dobot/`, `pubbot/`).
   - [ ] **Step 7b:** Write directive templates (`SOUL.md`, `IDENTITY.md`, `CAPABILITIES.md`, `WORKSPACE/`).

@@ -5,10 +5,13 @@
 # Engine: Apple Silicon Metal / 8-bit Quantized Cache
 # ==========================================
 
+# Navigate to the script's directory so relative paths in models.ini resolve correctly
+cd "$(dirname "$0")"
+
 echo "Starting dual-slot llama-server engine on port 8080..."
 
 llama-server \
-  --models-preset ~/axxanoid_harnes/engine/models.ini \
+  --models-preset ./models.ini \
   --port 8080 \
   -np 2 \
   -fa 1 \

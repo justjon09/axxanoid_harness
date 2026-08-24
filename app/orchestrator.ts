@@ -1,6 +1,6 @@
 import { db } from './database.ts';
 import { sendLlamaCompletion, ChatMessage } from '../engine/llama-client.ts';
-import { parseAgentAction } from '../engine/translator.ts';
+import { formatPromptForModel, parseAgentAction } from '../engine/translator.ts';
 
 export interface WorkboardCard {
     id: string;
@@ -18,7 +18,7 @@ export interface WorkboardCard {
  * Sweeps the database for blocked tasks whose dependencies are all complete,
  * automatically promoting them to 'ready' (The Domino Effect).
  */
-export function resolveDependencies() {
+export async function resolveDependencies() {
     // Find all 'blocked' cards
     const blockedCards = db.prepare(`
         SELECT * FROM workboard_cards WHERE status = 'blocked'
@@ -71,17 +71,29 @@ export async function processTask(task: WorkboardCard) {
     console.log(`>>> [ORCHESTRATOR] Processing Task [${task.id}] with Assignee [${task.assignee.toUpperCase()}]`);
 
     try {
-        // Select model based on agent tier
-        const modelName = task.assignee === 'axxbot' ? 'llama3_groq' : 'qwen_coder';
+
+
+        // 1. Select model based on agent tier
+        // Map assignee to exact model alias registered in models.ini
+        const modelAlias = task.assignee === 'axxbot' 
+            ? 'llama-3-groq-8b-tool-use' 
+            : 'qwen2.5-coder-14b-instruct';
+
+        // Map assignee to internal translator prompt formatter
+        const promptFormat = task.assignee === 'axxbot' 
+            ? 'llama3_groq' 
+            : 'qwen_coder';
         
-        const messages: ChatMessage[] = [
+        const rawMessages: ChatMessage[] = [
             { role: 'system', content: `You are ${task.assignee.toUpperCase()}, an active worker agent in Axxanoid OS.` },
             { role: 'user', content: `Task: ${task.title}\nDetails: ${task.description || 'None'}` }
         ];
 
-        // 2. Dispatch to Local Engine
-        const completion = await sendLlamaCompletion(messages, { model: modelName });
-        
+        const formattedMessages = formatPromptForModel(rawMessages, [], promptFormat);
+
+         // 2. Dispatch to Local Engine
+        const completion = await sendLlamaCompletion(formattedMessages, { model: modelAlias });
+      
         // 3. Intercept & Parse Action
         const action = parseAgentAction(completion.content);
 
@@ -110,7 +122,7 @@ export async function processTask(task: WorkboardCard) {
 export async function runOrchestratorPulse() {
     try {
         // Step 1: Auto-unblock child cards whose parent dependencies completed
-        resolveDependencies();
+        await resolveDependencies();
 
         // Step 2: Fetch unblocked tasks ready for execution
         const readyTasks = getReadyTasks();
