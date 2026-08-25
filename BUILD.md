@@ -10,67 +10,83 @@
 ---
 
 ### Phase 2: State Machine & Translation Layer
-* [ ] **Step 5b:** Write Task Dispatch Orchestrator (`app/orchestrator.ts`)
-* Periodic polling loop for `ready` cards.
-* Dependency resolution (automatically converting `blocked` cards to `ready` when parent cards hit `done`).
-* Asynchronous worker dispatch to prevent context bleed.
-* [ ] **Step 5c:** Wire Orchestrator to Express Lifecycle (`app/main.ts`).
-* [ ] **Step 6:** Engine Client & Schema Translation Layer (`engine/llama-client.ts` & `engine/translator.ts`)
-* HTTP client targeting `llama-server` on port `8080`.
-* Router mapping: Directing AxxBot requests to `Llama-3-Groq-8B` and worker requests to `Qwen2.5-Coder-14B`.
-* Response interceptor: Normalizing output so markdown or plain text tool definitions are cleanly converted into standard `tool_calls` payloads.
+* [X] **Step 5b:** Write Task Dispatch Orchestrator (`app/orchestrator.ts`)
+    * Periodic polling loop for `ready` cards.
+    * Dependency resolution (automatically converting `blocked` cards to `ready` when parent cards hit `done`).
+    * Asynchronous worker dispatch to prevent context bleed.
+* [X] **Step 5c:** Wire Orchestrator to Express Lifecycle (`app/main.ts`).
+* [X] **Step 6:** Engine Client & Schema Translation Layer (`engine/llama-client.ts` & `engine/translator.ts`)
+    * HTTP client targeting `llama-server` on port `8080`.
+    * Router mapping: Directing AxxBot requests to `Llama-3-Groq-8B` and worker requests to `Qwen2.5-Coder-14B`.
+    * Response interceptor: Normalizing output so markdown or plain text tool definitions are cleanly converted into standard `tool_calls` payloads.
+* [ ] **Step 7:** Strict Execution & Self-Healing Verification Gate (`app/orchestrator.ts`)
+    * Prose Rejection: Reject conversational `user_message` responses as completions for worker tasks (e.g., Noid, ExecuBot).
+    * OS Tool Execution: Intercept `tool_call` actions and dispatch directly to physical OS primitives in `tools/executor.ts`.
+    * Exit Code 0 Verification:** Mark cards `done` ONLY when physical file artifacts exist or terminal commands return exit code `0`.
+    * Self-Healing Loop: Automatically catch `stderr` or non-zero exit codes, feed execution errors back into model context, and allow up to 3 self-correction retries before marking a task `failed`.
 
 ---
 
 ### Phase 3: Workforce Definitions & Permission Scoping
-* [ ] **Step 7:** Agent Personas & Lane Contracts (`agents/`)
-* Create agent directories: `axxbot/`, `noid/`, `execubot/`, `dobot/`, `pubbot/`.
-* Scaffolding per-agent directive files: `SOUL.md`, `IDENTITY.md`, `CAPABILITIES.md`, `WORKSPACE/`.
-* **Permission Contracts (`contracts.json` per agent):**
-* *AxxBot (Tier 1 Chief of Staff):* Granted read access to user files/documents for intent parsing. Denied shell execution (`terminal:exec`).
-* *Noid (Tier 2 Coder):* Restricted strictly to the project codebase directory. Denied system configuration edits.
-* *ExecuBot (Tier 2 OS Delegate):* Terminal execution enabled inside `axx_env`. Denied Workboard card creation.
-* *DoBot (Tier 2 SysAdmin):* System telemetry & skill management only.
+* [ ] **Step 8:** Agent Personas & scafolding (`agents/`)
+    * Create agent directories: `axxbot/`, `noid/`, `execubot/`, `dobot/`, `pubbot/`.
+    * Scaffolding per-agent directive files: `SOUL.md`, `IDENTITY.md`, `CAPABILITIES.md`, `WORKSPACE/`.
+* [ ] **Step 9:** Permission Contracts (`contracts.json` per agent)
+    * *AxxBot (Tier 1 Chief of Staff):* Intent parsing, workboard card creation, triage on blocked tasks, user status reporting. Denied direct shell execution (`terminal:exec`).
+    * *Noid (Tier 2 Coder):* Code analysis, task decomposition, file editing, and test verification. Restricted to project workspace.
+    * *ExecuBot (Tier 2 OS Delegate):* Shell/sandbox execution inside `axx_env`.
+    * *DoBot (Tier 2 SysAdmin):* System telemetry, database maintenance, and skill management.
+    * *PubBot (Tier 2 Publisher):* Documentation and Publication (web content) generation.
+* [ ] **Step 10:** Autonomous Task Decomposition & Needs-Based Blocking
+    * Sub-Task Generation:*Tier 2 workers (e.g., Noid) pull top-level cards and emit `workboard_mutation` actions to spawn linked micro-step child cards (e.g., read codebase -> create backup -> write patch -> test/debug).
+    * Needs Verification: Worker agents inspect dependencies and permissions (read/write access, environment setup, missing binaries) before executing a card.
+    * Needs-Based Blocking: If a required permission, tool, or environment binary is missing/failing, the worker mutates the card status to `blocked` with a structured payload: `{ "missing_need": "...", "suggestion": "..." }`.
+    * AxxBot Triage Loop: AxxBot polls `blocked` cards, evaluates the `missing_need`, suggests fixes to the CEO or spawns remediation tasks (e.g., ExecuBot installs dependency), and promotes the card back to `ready` once resolved.
 
 ---
 
-### Phase 4: Standardized Skills & Tools Framework
-* [ ] **Step 8:** Skill Schema & Tool Execution Pipeline (`skills/` & `tools/`)
-* **Skill Template Standard (`skills/template.json` / `SKILL.md`):** Uniform structure defining name, description, required parameters, and execution environment (TS vs Python).
-* Open-Source Tool Adapter: Standardized JSON interface allowing external open-source skills to plug directly into the harness without re-engineering.
-* Secure Execution Wrapper (`tools/executor.ts`):
-* TypeScript bridge executing Python tools inside `.AXXANOID_HARNES/axx_env/bin/python` via `child_process.spawn`.
-* Standardized `stdout`/`stderr` logging back to `workboard_cards.result_payload`.
+### Phase 4: Universal OS Primitives & Skills Framework
+* [ ] **Step 11:** Universal OS Primitives (`tools/executor.ts`)
+    * Implement the built-in system execution handlers using Node's `fs` and `child_process`:
+        * `run_terminal`: Executes shell commands or Python scripts inside `axx_env` (the universal execution primitive).
+        * `write_file`: Writes/overwrites physical files on disk.
+        * `read_file`: Reads text content of workspace files into context.
+        * `list_files`: Inspects directory trees and file listings.
+* [ ] **Step 12:** Skill Schemas & Open-Source Tool Adapter (`skills/`)
+    * Skill Template Standard: High-level workflow protocols instructing agents on how to combine core OS primitives for domain tasks (e.g., plugin refactoring, code auditing).
+    * Open-Source Tool Adapter: Standardized JSON interface allowing external open-source skills to plug directly into the harness without re-engineering.
+    * Standardized Logging: Stream `stdout`/`stderr` and process exit codes back to `workboard_cards.result_payload`.
 
 ---
 
 ### Phase 5: CLI Controls & Interactive Terminal
-* [ ] **Step 9:** CLI Channel Interface (`channels/cli.ts`)
-* Interactive terminal client for the CEO.
-* Direct prompt entry to spawn top-level Workboard cards through AxxBot.
-* CLI control commands:
-* `axx status` — View active, blocked, and completed Workboard cards.
-* `axx pause` / `axx resume` — Emergency halt on the orchestrator event loop.
-* `axx logs [agent]` — Stream real-time agent output.
+* [ ] **Step 13:** CLI Channel Interface (`channels/cli.ts`)
+    * Interactive terminal client for the CEO.
+    * Direct prompt entry to spawn top-level Workboard cards through AxxBot.
+    * CLI control commands:
+        * `axx add "Task"` — Directly inject a ready task into `memory.db`.
+        * `axx status` — View active, blocked, and completed Workboard cards with missing needs.
+        * `axx pause` / `axx resume` — Emergency halt on the orchestrator event loop.
+        * `axx logs [agent]` — Stream real-time agent output and tool execution logs.
 
 ---
 
 ### Phase 6: Web UI, Dashboard & Cron Controls
-* [ ] **Step 10a:** REST & WebSocket API Routes (`api/`)
-* Kanban board CRUD endpoints (`GET/POST /api/cards`, `PUT /api/cards/:id/status`).
-* Real-time WebSocket event broadcaster (`channels/web/ws-server.ts`) to push card updates and agent thought logs to the browser.
-* [ ] **Step 10b:** Web Dashboard Frontend (`channels/web/public/`)
-* Visual Kanban board interface showing real-time card transitions (`ready` -> `in_progress` -> `done`).
-* **Cron & Heartbeat Control Panel:** UI toggle for background heartbeat loops, frequency sliders, and audit script toggles.
-* **Permissions & Directives Viewer:** UI interface to view active contracts, edit `SOUL.md` / `HUMAN.md` directives, and manage file read permissions for AxxBot.
+* [ ] **Step 14:** REST & WebSocket API Routes (`api/`)
+    * Kanban board CRUD endpoints (`GET/POST /api/cards`, `PUT /api/cards/:id/status`).
+    * Real-time WebSocket event broadcaster (`channels/web/ws-server.ts`) to push card updates, needs-triage alerts, and agent thought logs to the browser.
+* [ ] **Step 15:** Web Dashboard Frontend (`channels/web/public/`)
+    * Visual Kanban board interface showing real-time card transitions (`ready` -> `in_progress` -> `done`).
+    * Cron & Heartbeat Control Panel: UI toggle for background heartbeat loops, frequency sliders, and audit script toggles.
+    * Permissions & Directives Viewer: UI interface to view active contracts, edit `SOUL.md` / `HUMAN.md` directives, and manage file read permissions for AxxBot.
 
 ---
 
 ### Phase 7: Validation & End-to-End Factory Verification
-* [ ] **Step 11:** Full System Assembly & Playbook Finalization
-* Multi-agent dependency chain test (AxxBot creates card -> Noid writes code -> ExecuBot executes -> AxxBot reports final output).
-* Verify zero-cost, 100% offline execution on Apple Silicon Metal.
-* Update `END-TO-END.md` and `README.md` with final production commands.
+* [ ] **Step 16:** Full System Assembly & Playbook Finalization
+    * Multi-agent dependency chain test (AxxBot creates card -> Noid writes code -> ExecuBot executes -> AxxBot reports final output).
+    * Verify zero-cost, 100% offline execution on Apple Silicon Metal.
+    * Update `END-TO-END.md` and `README.md` with final production commands.
 
 ## END Axxanoid Harness: Master Build Outline
 
@@ -611,20 +627,8 @@ test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or fai
   - [X] **Step 5a:** Initialize SQLite schema in WAL mode (`app/database.ts`).
   - [X] **Step 5b:** Write task dispatch orchestrator (`app/orchestrator.ts`).
   - [X] **Step 5c:** Connect orchestrator loop to server lifespan (`app/main.ts`).
-- [ ] **Step 6: Engine Client & Schema Translation Layer (`engine/`)**
-  - [X] **Step 6a:** Create HTTP client targeting `llama-server` on port `8080` (`engine/llama-client.ts`).
-  - [X] **Step 6b:** Build schema translator & response interceptor (`engine/translator.ts`).
-  - [X] **Step 6c:** Wire ready task execution dispatch in `app/orchestrator.ts` to `engine/llama-client.ts`.
-- [ ] **Step 7: Workforce Definitions & Permission Scoping (`agents/`)**
-  - [ ] **Step 7a:** Scaffold agent directories (`axxbot/`, `noid/`, `execubot/`, `dobot/`, `pubbot/`).
-  - [ ] **Step 7b:** Write directive templates (`SOUL.md`, `IDENTITY.md`, `CAPABILITIES.md`, `WORKSPACE/`).
-  - [ ] **Step 7c:** Enforce permission contracts (`contracts.json` per agent).
-- [ ] **Step 8: Standardized Skills & Tools Framework (`skills/` & `tools/`)**
-  - [ ] **Step 8a:** Build skill schema template (`skills/template.json`) and open-source tool adapter.
-  - [ ] **Step 8b:** Implement secure execution wrapper targeting `axx_env` (`tools/executor.ts`).
-- [ ] **Step 9: CLI Controls & Interactive CEO Terminal (`channels/cli.ts`)**
-- [ ] **Step 10: Web UI Dashboard, REST API & Control Panel (`api/` & `channels/web/`)**
-- [ ] **Step 11: End-to-End Validation & Playbook Verification**
+- [ ] **Step 6:** Engine Client & Schema Translation Layer (`engine/llama-client.ts` & `engine/translator.ts`)
+
 
 ## Completed Log
 - [x] Defined Virtual Company Tiered Roster
