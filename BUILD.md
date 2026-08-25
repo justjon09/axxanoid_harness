@@ -202,11 +202,8 @@ create /app/deamon-controler.ts (port of app_heartbeat.py)
 
 * Step 4: The Engine Lock-In (models.ini & start-engine.sh)
 download the exact locked-in models directly
-
 hf download bartowski/Llama-3-Groq-8B-Tool-Use-GGUF Llama-3-Groq-8B-Tool-Use-Q4_K_M.gguf --local-dir .AXXANOID_HARNES/engine/models
-
 hf download Qwen/Qwen2.5-Coder-14B-Instruct-GGUF qwen2.5-coder-14b-instruct-q4_k_m.gguf --local-dir .AXXANOID_HARNES/engine/models
-
 Create AXXANOID_HARNES/engine/models.ini
 Create AXXANOID_HARNES/engine/start-engine.sh
 
@@ -466,7 +463,6 @@ test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or fai
     153.27.331.179 W srv    operator(): got exception: {"error":{"code":500,"message":"model name=qwen2.5-coder-14b-instruct failed to load","type":"server_error"}}
 
 * *END Result* *
-
 cd "$(dirname "$0")" -- added to start engin
 
 test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or failed):
@@ -606,6 +602,51 @@ test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or fai
         }
 * *END Result* *
 
+* Step 7:** Strict Execution & Self-Healing Verification Gate
+    *OS Tool Execution: Intercept `tool_call` actions and dispatch directly to physical OS primitives in `tools/executor.ts`.*
+    *Verified Closed-Loop Orchestrator (app/orchestrator.ts)*
+    *Verification Test*
+npx tsx -e "import { db } from './app/database.ts'; db.prepare(\"INSERT INTO workboard_cards (id, title, description, assignee, status) VALUES ('task-105', 'Write hello script', 'Use write_file to create ./hello_world.py with content print(\\\"Hello from Axxanoid\\\")', 'noid', 'ready')\").run();"
+* *Result* *
+    Jeremys-MacBook-Pro: ~/axxanoid_harnes % npm run dev
+
+    > axxanoid_harnes@1.0.0 dev
+    > tsx watch app/main.ts
+
+    >>> [DATABASE] Shared SQLite Workboard schema initialized in WAL mode.
+    >>> Booting Axxanoid Harness ....
+    >>> API Listening on http://127.0.0.1:8000
+    >>> [SYSTEM] Initializing startup heartbeat...
+    >>> [HEARTBEAT] Wake sequence initiated. Ingesting core directives into RAM...
+    >>> [HEARTBEAT WARNING] Missing directive file: SOUL.md. Skipping.
+    >>> [HEARTBEAT WARNING] Missing directive file: IDENTITY.md. Skipping.
+    >>> [HEARTBEAT WARNING] Missing directive file: HUMAN.md. Skipping.
+    >>> [HEARTBEAT WARNING] Missing directive file: HEARTBEAT.md. Skipping.
+    >>> [HEARTBEAT] Executing dynamic audits from HEARTBEAT.md...
+    >>> [HEARTBEAT] Audit complete. Ready for Engine Inference.
+    >>> [SYSTEM] Initializing background heartbeat (15m pulse)...
+    >>> [SYSTEM] Initializing Workboard Orchestrator (5s pulse)...
+    >>> [ORCHESTRATOR] Found 1 READY task(s) on Workboard.
+        -> [CARD task-105] Assigned to: NOID | Title: "Write hello script"
+    >>> [ORCHESTRATOR] Processing Task [task-105] with Assignee [NOID]
+    >>> [ORCHESTRATOR] Task [task-105] Execution Attempt 1/3
+    >>> [EXECUTION] Intercepted Tool [write_file]. Executing on OS...
+    >>> [EXECUTION VERIFIED SUCCESS]: Successfully wrote 28 characters to ./hello_world.py
+    >>> [ORCHESTRATOR] Task [task-105] Finalized -> STATUS: DONE
+
+    llama result:
+    1345.29.971.865 I srv  proxy_reques: proxying request to model qwen2.5-coder-14b-instruct on port 50566
+    [50566] 1342.56.161.522 I slot get_availabl: id  0 | task -1 | selected slot by LRU, t_last = -1
+    [50566] 1342.56.162.790 I slot launch_slot_: id  0 | task 129 | processing task, is_child = 0
+    [50566] 1343.04.348.334 I slot print_timing: id  0 | task 129 | prompt eval time =    6007.37 ms /   497 tokens (   12.09 ms per token,    82.73 tokens per second)
+    [50566] 1343.04.348.337 I slot print_timing: id  0 | task 129 |        eval time =    2172.60 ms /    54 tokens (   40.23 ms per token,    24.86 tokens per second)
+    [50566] 1343.04.348.337 I slot print_timing: id  0 | task 129 |       total time =    8179.97 ms /   551 tokens
+    [50566] 1343.04.348.337 I slot print_timing: id  0 | task 129 |    graphs reused =        178
+    [50566] 1343.04.360.731 I slot      release: id  0 | task 129 | stop processing: n_tokens = 550, truncated = 0
+    
+    tools/hello_world.py created:
+    print("Hello from Axxanoid")
+* *END Result* *
 --- living ---
 
 ### End Axxanoid Harness: Build & Refactor Tracker - detailed
@@ -617,6 +658,8 @@ test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or fai
 - Engine locked: `llama.cpp` (`llama-server`) running concurrently with compressed KV cache.
 - Database locked: Shared SQLite database running in Write-Ahead Logging (WAL) mode (`memory.db`).
 - Task Orchestrator active: 5-second pulse loop sweeping Workboard cards and resolving dependency chains automatically (Domino Effect).
+- Verified inference loop and action parsing via task-104 test.
+- Active focus: Step 7 (Strict Execution & Self-Healing Verification Gate).
 
 ## To-Do List (Next Actions)
 - [X] **Step 1:** Scaffold the `AXXANOID_HARNES` physical directory structure.
@@ -628,6 +671,16 @@ test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or fai
   - [X] **Step 5b:** Write task dispatch orchestrator (`app/orchestrator.ts`).
   - [X] **Step 5c:** Connect orchestrator loop to server lifespan (`app/main.ts`).
 - [ ] **Step 6:** Engine Client & Schema Translation Layer (`engine/llama-client.ts` & `engine/translator.ts`)
+- [ ] **Step 7:** Strict Execution & Self-Healing Verification Gate (app/orchestrator.ts & tools/executor.ts)
+- [ ] **Step 8:** Agent Personas & Scaffolding (agents/)
+- [ ] **Step 9:** Permission Contracts (contracts.json per agent)
+- [ ] **Step 10:** Autonomous Task Decomposition & Needs-Based Blocking
+- [ ] **Step 11:** Universal OS Primitives (tools/executor.ts)
+- [ ] **Step 12:** Skill Schemas & Open-Source Tool Adapter (skills/)
+- [ ] **Step 13:** CLI Channel Interface (channels/cli.ts)
+- [ ] **Step 14:** REST & WebSocket API Routes (api/)
+- [ ] **Step 15:** Web Dashboard Frontend (channels/web/public/)
+- [ ] **Step 16:** Full System Assembly & Playbook Finalization 
 
 
 ## Completed Log
@@ -641,5 +694,7 @@ test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or fai
 - [x] Configured SQLite WAL mode schema for multi-process safety (`app/database.ts`)
 - [x] Implemented Task Dispatch Orchestrator (`app/orchestrator.ts`) with automatic dependency chain resolution
 - [x] Wired 5-second Orchestrator pulse loop and 15-minute Heartbeat pulse loop to Express server lifespan (`app/main.ts`)
+- [x] Implemented engine/llama-client.ts and engine/translator.ts
+- [x] Verified full lifecycle routing from Orchestrator to llama-server on port 8080 (task-104 test)
 
 ### End Axxanoid Harness: Build & Refactor Tracker - Overview

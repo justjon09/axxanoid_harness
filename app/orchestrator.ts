@@ -1,6 +1,8 @@
 import { db } from './database.ts';
 import { sendLlamaCompletion, ChatMessage } from '../engine/llama-client.ts';
-import { formatPromptForModel, parseAgentAction } from '../engine/translator.ts';
+import { formatPromptForModel, parseAgentAction, HarnessToolDefinition } from '../engine/translator.ts';
+import { SYSTEM_TOOLS } from '../tools/native.ts'
+import { executeTool, ToolResult } from '../tools/executor.ts';
 
 export interface WorkboardCard {
     id: string;
@@ -70,50 +72,113 @@ export async function processTask(task: WorkboardCard) {
 
     console.log(`>>> [ORCHESTRATOR] Processing Task [${task.id}] with Assignee [${task.assignee.toUpperCase()}]`);
 
-    try {
+    const isWorker = ['noid', 'execubot', 'dobot'].includes(task.assignee.toLowerCase());
+    // 1. Select model based on agent tier        
+    // Map assignee to exact model alias registered in models.ini
+    const modelAlias = task.assignee === 'axxbot' 
+        ? 'llama-3-groq-8b-tool-use' 
+        : 'qwen2.5-coder-14b-instruct';
 
+    // Map assignee to internal translator prompt formatter
+    const promptFormat = task.assignee === 'axxbot' 
+        ? 'llama3_groq' 
+        : 'qwen_coder';
+    
+    const conversationHistory: ChatMessage[] = [
+        {
+            role: 'system',
+            content: `You are ${task.assignee.toUpperCase()}, an execution worker in Axxanoid OS. You MUST issue an actionable JSON tool_call to perform work. Do NOT respond with plain conversational prose or explanations.`
+        },
+        {
+            role: 'user',
+            content: `Task: ${task.title}\nDetails: ${task.description || 'None'}`
+        }
+    ];
 
-        // 1. Select model based on agent tier
-        // Map assignee to exact model alias registered in models.ini
-        const modelAlias = task.assignee === 'axxbot' 
-            ? 'llama-3-groq-8b-tool-use' 
-            : 'qwen2.5-coder-14b-instruct';
+    let attempts = 0;
+    const maxAttempts = 3;
+    let taskCompleted = false;
+    let lastResultPayload: any = null;
 
-        // Map assignee to internal translator prompt formatter
-        const promptFormat = task.assignee === 'axxbot' 
-            ? 'llama3_groq' 
-            : 'qwen_coder';
-        
-        const rawMessages: ChatMessage[] = [
-            { role: 'system', content: `You are ${task.assignee.toUpperCase()}, an active worker agent in Axxanoid OS.` },
-            { role: 'user', content: `Task: ${task.title}\nDetails: ${task.description || 'None'}` }
-        ];
+    while (attempts < maxAttempts && !taskCompleted) {
+        attempts++;
+        console.log(`>>> [ORCHESTRATOR] Task [${task.id}] Execution Attempt ${attempts}/${maxAttempts}`);
 
-        const formattedMessages = formatPromptForModel(rawMessages, [], promptFormat);
+        try {
+            // Format message include SYSTEM_TOOLS
+            const formattedMessages = formatPromptForModel(conversationHistory, SYSTEM_TOOLS, promptFormat);
+            // Dispatch to Local Engine
+            const completion = await sendLlamaCompletion(formattedMessages, { model: modelAlias });
+            // 3. Intercept & Parse Action
+            const action = parseAgentAction(completion.content);
 
-         // 2. Dispatch to Local Engine
-        const completion = await sendLlamaCompletion(formattedMessages, { model: modelAlias });
-      
-        // 3. Intercept & Parse Action
-        const action = parseAgentAction(completion.content);
+            // PROSE REJECTION: Worker agents MUST invoke tools, not chat
+            if (isWorker && action.type === 'user_message') {
+                console.warn(`>>> [PROSE REJECTED] Worker [${task.assignee.toUpperCase()}] returned prose instead of a tool call.`);
+                
+                conversationHistory.push({
+                    role: 'assistant',
+                    content: completion.content
+                });
+                conversationHistory.push({
+                    role: 'user',
+                    content: 'ERROR: Conversational responses are rejected. You must output a JSON tool_call payload (e.g. write_file or run_terminal) to perform physical work on the OS.'
+                });
 
-        // 4. Update task completion state
-        db.prepare(`
-            UPDATE workboard_cards 
-            SET status = 'done', result_payload = ?, updated_at = CURRENT_TIMESTAMP 
-            WHERE id = ?
-        `).run(JSON.stringify(action), task.id);
+                lastResultPayload = {
+                    error: 'Rejected: Worker returned conversational text instead of an actionable tool call.',
+                    response: completion.content
+                };
+                continue;
+            }
 
-        console.log(`>>> [ORCHESTRATOR] Task [${task.id}] Completed Successfully.`);
-    } catch (error: any) {
-        db.prepare(`
-            UPDATE workboard_cards 
-            SET status = 'failed', result_payload = ?, updated_at = CURRENT_TIMESTAMP 
-            WHERE id = ?
-        `).run(JSON.stringify({ error: error.message }), task.id);
+            // OS TOOL EXECUTION GATE
+            if (action.type === 'tool_call' && action.target) {
+                console.log(`>>> [EXECUTION] Intercepted Tool [${action.target}]. Executing on OS...`);
+                const executionResult: ToolResult = await executeTool(action.target, action.payload);
 
-        console.error(`>>> [ORCHESTRATOR] Task [${task.id}] Execution Failed: ${error.message}`);
+                lastResultPayload = {
+                    action,
+                    execution: executionResult
+                };
+
+                if (executionResult.success) {
+                    console.log(`>>> [EXECUTION VERIFIED SUCCESS]: ${executionResult.output}`);
+                    taskCompleted = true;
+                } else {
+                    console.warn(`>>> [EXECUTION FAILED]: ${executionResult.error}`);
+                    
+                    // SELF-HEALING FEEDBACK: Push error back to LLM context
+                    conversationHistory.push({
+                        role: 'assistant',
+                        content: completion.content
+                    });
+                    conversationHistory.push({
+                        role: 'user',
+                        content: `TOOL EXECUTION ERROR (${action.target}): ${executionResult.error}\nFix the issue in your parameters/code and re-issue the tool_call.`
+                    });
+                }
+            } else {
+                taskCompleted = true;
+                lastResultPayload = { action };
+            }
+        } catch (error: any) {
+            console.error(`>>> [INFERENCE ERROR] Attempt ${attempts} failed: ${error.message}`);
+            lastResultPayload = { error: error.message };
+        }
     }
+
+    // 4. Update task
+    const finalStatus = taskCompleted ? 'done' : 'failed';
+    db.prepare(
+        `
+        UPDATE workboard_cards 
+        SET status = ?, result_payload = ?, updated_at = CURRENT_TIMESTAMP 
+        WHERE id = ?
+        `
+    ).run(finalStatus, JSON.stringify(lastResultPayload, null, 2), task.id);
+
+    console.log(`>>> [ORCHESTRATOR] Task [${task.id}] Finalized -> STATUS: ${finalStatus.toUpperCase()}`);
 }
 
 /**
