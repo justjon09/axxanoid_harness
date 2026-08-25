@@ -19,7 +19,7 @@
     * HTTP client targeting `llama-server` on port `8080`.
     * Router mapping: Directing AxxBot requests to `Llama-3-Groq-8B` and worker requests to `Qwen2.5-Coder-14B`.
     * Response interceptor: Normalizing output so markdown or plain text tool definitions are cleanly converted into standard `tool_calls` payloads.
-* [ ] **Step 7:** Strict Execution & Self-Healing Verification Gate (`app/orchestrator.ts`)
+* [X] **Step 7:** Strict Execution & Self-Healing Verification Gate (`app/orchestrator.ts`)
     * Prose Rejection: Reject conversational `user_message` responses as completions for worker tasks (e.g., Noid, ExecuBot).
     * OS Tool Execution: Intercept `tool_call` actions and dispatch directly to physical OS primitives in `tools/executor.ts`.
     * Exit Code 0 Verification:** Mark cards `done` ONLY when physical file artifacts exist or terminal commands return exit code `0`.
@@ -100,7 +100,7 @@
 **2. `AXXANOID_HARNES/engine/` (The Translation Layer)**
 * **What goes here:** Model client setup, specific parsing logic, and proxy routing.
 * **Mapped from Codeman:** `src/utils/opencode-cli-resolver.ts`, `src/utils/claude-cli-resolver.ts`, `src/mux-factory.ts`.
-* **Function:** **This is where we solve our 10-day nightmare.** This folder's sole job is to translate the generic JSON outputs from `llama.cpp` (Port 8080) into standard tool calls. If Qwen hallucinates a markdown block, this engine intercepts it, formats it perfectly, and hands it to the `app/` layer.
+* **Function:** This folder's sole job is to translate the generic JSON outputs from `llama.cpp` (Port 8080) into standard tool calls. If Qwen hallucinates a markdown block, this engine intercepts it, formats it perfectly, and hands it to the `app/` layer.
 
 **3. `AXXANOID_HARNES/agents/` (The Personas & Workspaces)**
 * **What goes here:** The explicit definitions and isolated sandboxes for your workforce.
@@ -659,7 +659,8 @@ npx tsx -e "import { db } from './app/database.ts'; db.prepare(\"INSERT INTO wor
 - Database locked: Shared SQLite database running in Write-Ahead Logging (WAL) mode (`memory.db`).
 - Task Orchestrator active: 5-second pulse loop sweeping Workboard cards and resolving dependency chains automatically (Domino Effect).
 - Verified inference loop and action parsing via task-104 test.
-- Active focus: Step 7 (Strict Execution & Self-Healing Verification Gate).
+- Built Strict Execution & Self-Healing Verification Gate (task-105 test)
+- Active focus: Step 8 (Agent Personas & Scaffolding).
 
 ## To-Do List (Next Actions)
 - [X] **Step 1:** Scaffold the `AXXANOID_HARNES` physical directory structure.
@@ -670,8 +671,8 @@ npx tsx -e "import { db } from './app/database.ts'; db.prepare(\"INSERT INTO wor
   - [X] **Step 5a:** Initialize SQLite schema in WAL mode (`app/database.ts`).
   - [X] **Step 5b:** Write task dispatch orchestrator (`app/orchestrator.ts`).
   - [X] **Step 5c:** Connect orchestrator loop to server lifespan (`app/main.ts`).
-- [ ] **Step 6:** Engine Client & Schema Translation Layer (`engine/llama-client.ts` & `engine/translator.ts`)
-- [ ] **Step 7:** Strict Execution & Self-Healing Verification Gate (app/orchestrator.ts & tools/executor.ts)
+- [X] **Step 6:** Engine Client & Schema Translation Layer (`engine/llama-client.ts` & `engine/translator.ts`)
+- [X] **Step 7:** Strict Execution & Self-Healing Verification Gate (app/orchestrator.ts & tools/executor.ts)
 - [ ] **Step 8:** Agent Personas & Scaffolding (agents/)
 - [ ] **Step 9:** Permission Contracts (contracts.json per agent)
 - [ ] **Step 10:** Autonomous Task Decomposition & Needs-Based Blocking
@@ -696,5 +697,6 @@ npx tsx -e "import { db } from './app/database.ts'; db.prepare(\"INSERT INTO wor
 - [x] Wired 5-second Orchestrator pulse loop and 15-minute Heartbeat pulse loop to Express server lifespan (`app/main.ts`)
 - [x] Implemented engine/llama-client.ts and engine/translator.ts
 - [x] Verified full lifecycle routing from Orchestrator to llama-server on port 8080 (task-104 test)
+- [x] Implemented tools/executor.ts and closed-loop OS execution in app/orchestrator.ts (task-105 test)
 
 ### End Axxanoid Harness: Build & Refactor Tracker - Overview

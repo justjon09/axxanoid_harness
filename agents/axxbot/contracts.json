@@ -1,0 +1,18 @@
+{
+  "agent": "axxbot",
+  "tier": 1,
+  "permissions": {
+    "workboard": {
+      "create_card": true,
+      "update_status": true,
+      "assign_task": true,
+      "manage_dependencies": true
+    },
+    "system": {
+      "file_write": false,
+      "file_read": true,
+      "terminal_exec": false
+    }
+  },
+  "assigned_model": "llama-3-groq-8b-tool-use"
+}
