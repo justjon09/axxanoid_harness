@@ -29,7 +29,7 @@
 
 ### Phase 3: Variable-Based Architecture & Registry Refactor
 Architectural Rationale: Transition from hardcoded logic, duplicate schema declarations, and monolithic switch statements to a 100% variable-driven, self-discovering system. This refactor decouples machine permissions, runtime metadata, and LLM reasoning while allowing single-file tool/skill additions and developer-controlled toggles.
-* [ ] **Step 8:** Standardized 3-File Agent Model (AXXANOID_HARNES/agents/{agent}/)
+* [X] **Step 8:** Standardized 3-File Agent Model (AXXANOID_HARNES/agents/{agent}/)
     * config.json: Developer permission boundaries and machine routing (allowed_tools: ["workboard_*", "write_file"], assigned_model, tier, workspace_path). Parsed natively by Node for zero-overhead validation.
     * IDENTITY.md: Human/UI presentation metadata (Display Bio, Avatar path, Emoji).
     * SOUL.md: Cognitive prompt (persona, voice, boundaries, and the Path-to-Success invariant).
@@ -623,7 +623,7 @@ test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or fai
         }
 * *END Result* *
 
-* Step 7:** Strict Execution & Self-Healing Verification Gate
+* Step 7:* Strict Execution & Self-Healing Verification Gate
     *OS Tool Execution: Intercept `tool_call` actions and dispatch directly to physical OS primitives in `tools/executor.ts`.*
     *Verified Closed-Loop Orchestrator (app/orchestrator.ts)*
     *Verification Test*
@@ -671,6 +671,10 @@ npx tsx -e "import { db } from './app/database.ts'; db.prepare(\"INSERT INTO wor
 
 
 STOP ALL and REFACTOR -----
+* Step 8:* Standardized 3-File Agent Model (AXXANOID_HARNES/agents/{agent}/)
+contracts renamed to config, permission cahnged to allowed_tools and allowed_skills
+removed routing from 
+* Step 9:* Multi-Tiered Self-Contained Tool Engine (AXXANOID_HARNES/tools/)
 --- living ---
 
 ### End Axxanoid Harness: Build & Refactor Tracker - detailed
@@ -684,7 +688,8 @@ STOP ALL and REFACTOR -----
 - Task Orchestrator active: 5-second pulse loop sweeping Workboard cards and resolving dependency chains automatically (Domino Effect).
 - Verified inference loop and action parsing via task-104 test.
 - Built Strict Execution & Self-Healing Verification Gate (task-105 test)
-- Active focus: Step 8 (Agent Personas & Scaffolding).
+- Defined agent scafolding
+- Active focus: Step 9:* Multi-Tiered Self-Contained Tool Engine 
 
 ## To-Do List (Next Actions)
 - [X] **Step 1:** Scaffold the `AXXANOID_HARNES` physical directory structure.
@@ -697,18 +702,7 @@ STOP ALL and REFACTOR -----
   - [X] **Step 5c:** Connect orchestrator loop to server lifespan (`app/main.ts`).
 - [X] **Step 6:** Engine Client & Schema Translation Layer (`engine/llama-client.ts` & `engine/translator.ts`)
 - [X] **Step 7:** Strict Execution & Self-Healing Verification Gate (app/orchestrator.ts & tools/executor.ts)
-
-
-- [ ] **Step 8:** Agent Personas & Scaffolding (agents/)
-- [ ] **Step 9:** Permission Contracts (contracts.json per agent)
-- [ ] **Step 10:** Autonomous Task Decomposition & Needs-Based Blocking
-- [ ] **Step 11:** Universal OS Primitives (tools/executor.ts)
-- [ ] **Step 12:** Skill Schemas & Open-Source Tool Adapter (skills/)
-- [ ] **Step 13:** CLI Channel Interface (channels/cli.ts)
-- [ ] **Step 14:** REST & WebSocket API Routes (api/)
-- [ ] **Step 15:** Web Dashboard Frontend (channels/web/public/)
-- [ ] **Step 16:** Full System Assembly & Playbook Finalization 
-- [ ] **Step 8:** Standardized 3-File Agent Model (config.json, IDENTITY.md, SOUL.md)
+- [X] **Step 8:** Standardized 3-File Agent Model (config.json, IDENTITY.md, SOUL.md)
 - [ ] **Step 9:** Multi-Tiered Self-Contained Tool Engine (Directory precedence & auto-discovery)
 - [ ] **Step 10:** Multi-Tiered Skill Engine (Workflow templates & auto-discovery)
 - [ ] **Step 11:** System Control & Diagnostic Boot Audit (system_control.json & static file inspection)
@@ -740,5 +734,6 @@ STOP ALL and REFACTOR -----
 - [x] Implemented engine/llama-client.ts and engine/translator.ts
 - [x] Verified full lifecycle routing from Orchestrator to llama-server on port 8080 (task-104 test)
 - [x] Implemented tools/executor.ts and closed-loop OS execution in app/orchestrator.ts (task-105 test)
+- [x] single agent scafolding setup AxxBot
 
 ### End Axxanoid Harness: Build & Refactor Tracker - Overview

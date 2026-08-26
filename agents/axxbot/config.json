@@ -1,0 +1,14 @@
+{
+  "agent_id": "axxbot",
+  "tier": 1,
+  "assigned_model": "llama-3-groq-8b-tool-use",
+  "workspace_path": "AXXANOID_HARNES/agents/axxbot/WORKSPACE/",
+  "allowed_tools": [
+    "workboard_*",
+    "read_file"
+  ],
+  "allowed_skills": [
+    "triage_*",
+    "system_audit"
+  ]
+}
