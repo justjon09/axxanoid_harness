@@ -1,6 +1,6 @@
 ## Axxanoid Harness: Master Build Outline
 
-### Phase 1: Engine, DB & Core Lifespan (COMPLETED)
+### Phase 1: Engine, DB & Core Lifespan
 * [x] **Step 1:** Scaffold physical directory structure (`.AXXANOID_HARNES/{app,axx_env,configs,agents,tools,skills,engine,api,channels}`).
 * [x] **Step 2:** Initialize TypeScript foundation (`package.json`, `tsconfig.json`, `express`, `better-sqlite3`).
 * [x] **Step 3:** Establish isolated Python execution sandbox (`axx_env`).
@@ -27,17 +27,34 @@
 
 ---
 
-### Phase 3: Workforce Definitions & Permission Scoping
-* [ ] **Step 8:** Agent Personas & scafolding (`agents/`)
-    * Create agent directories: `axxbot/`, `noid/`, `execubot/`, `dobot/`, `pubbot/`.
-    * Scaffolding per-agent directive files: `SOUL.md`, `IDENTITY.md`, `CAPABILITIES.md`, `WORKSPACE/`.
-* [ ] **Step 9:** Permission Contracts (`contracts.json` per agent)
-    * *AxxBot (Tier 1 Chief of Staff):* Intent parsing, workboard card creation, triage on blocked tasks, user status reporting. Denied direct shell execution (`terminal:exec`).
-    * *Noid (Tier 2 Coder):* Code analysis, task decomposition, file editing, and test verification. Restricted to project workspace.
-    * *ExecuBot (Tier 2 OS Delegate):* Shell/sandbox execution inside `axx_env`.
-    * *DoBot (Tier 2 SysAdmin):* System telemetry, database maintenance, and skill management.
-    * *PubBot (Tier 2 Publisher):* Documentation and Publication (web content) generation.
-* [ ] **Step 10:** Autonomous Task Decomposition & Needs-Based Blocking
+### Phase 3: Variable-Based Architecture & Registry Refactor
+Architectural Rationale: Transition from hardcoded logic, duplicate schema declarations, and monolithic switch statements to a 100% variable-driven, self-discovering system. This refactor decouples machine permissions, runtime metadata, and LLM reasoning while allowing single-file tool/skill additions and developer-controlled toggles.
+* [ ] **Step 8:** Standardized 3-File Agent Model (AXXANOID_HARNES/agents/{agent}/)
+    * config.json: Developer permission boundaries (allowed_tools: ["workboard_*", "write_file"])
+    * IDENTITY.md: Machine runtime metadata (assigned_model, tier, workspace_path).
+    * SOUL.md: Cognitive prompt (persona, voice, boundaries, and the Path-to-Success invariant).
+* [ ] **Step 9:** Multi-Tiered Self-Contained Tool Engine (AXXANOID_HARNES/tools/)
+    * [ ] **Step 9a:** Single-File Modules: Delete tools/native.ts and the switch statement in tools/executor.ts. Each tool file exports both its LLM JSON Schema and its Node.js execute() function.
+    * [ ] **Step 9b:** Hierarchical Directory Tree:
+        * tools/native/: Core OS primitives (run_terminal, write_file, read_file).
+        * tools/custom/: User-authored TypeScript execution tools.
+        * tools/imported/: Converted open-source / MCP tool definitions.
+        * tools/agent-built/: Tools generated dynamically at runtime by workers.
+    * [ ] **Step 9c:**  Open-Source skills Adapter: Standardized JSON interface allowing external open-source skills to plug directly into the harness without re-engineering.
+    * [ ] **Step 9d:**  Dynamic Auto-Loader (tools/index.ts): Scans all subdirectories at startup to populate ToolRegistry (Map<string, Tool>).
+* [ ] **Step 10:** Multi-Tiered Skill Engine (AXXANOID_HARNES/skills/)
+    * Skill Template Standard: High-level workflow protocols instructing agents on how to combine core OS primitives for domain tasks (e.g., plugin refactoring, code auditing).
+    * Multi-step sequence workflows organized into matching tiers (skills/native/, skills/custom/, skills/imported/).
+    * Open-Source skills Adapter: Standardized JSON interface allowing external open-source skills to plug directly into the harness without re-engineering.
+    * Auto-discovered at boot time into a central SkillRegistry.
+
+---
+
+### Phase 4: System Control & Startup AI Verification
+* [ ] **Step 11:** system_control.json: Master developer override file allowing toggles ("enabled": false) on any tool or skill by ID to disable buggy dependencies system-wide.
+* [ ] **Step 12:** Startup AI Verification: At boot, Node compiles active registry manifests and sends a verification request to llama-server to validate parameters and flag schema conflicts before opening the pulse loop.
+* [ ] **Step 13:** Standardized Logging: Stream `stdout`/`stderr` and process exit codes back to `workboard_cards.result_payload`.
+* [ ] **Step 14:** Autonomous Task Decomposition & Needs-Based Blocking
     * Sub-Task Generation:*Tier 2 workers (e.g., Noid) pull top-level cards and emit `workboard_mutation` actions to spawn linked micro-step child cards (e.g., read codebase -> create backup -> write patch -> test/debug).
     * Needs Verification: Worker agents inspect dependencies and permissions (read/write access, environment setup, missing binaries) before executing a card.
     * Needs-Based Blocking: If a required permission, tool, or environment binary is missing/failing, the worker mutates the card status to `blocked` with a structured payload: `{ "missing_need": "...", "suggestion": "..." }`.
@@ -45,22 +62,18 @@
 
 ---
 
-### Phase 4: Universal OS Primitives & Skills Framework
-* [ ] **Step 11:** Universal OS Primitives (`tools/executor.ts`)
-    * Implement the built-in system execution handlers using Node's `fs` and `child_process`:
-        * `run_terminal`: Executes shell commands or Python scripts inside `axx_env` (the universal execution primitive).
-        * `write_file`: Writes/overwrites physical files on disk.
-        * `read_file`: Reads text content of workspace files into context.
-        * `list_files`: Inspects directory trees and file listings.
-* [ ] **Step 12:** Skill Schemas & Open-Source Tool Adapter (`skills/`)
-    * Skill Template Standard: High-level workflow protocols instructing agents on how to combine core OS primitives for domain tasks (e.g., plugin refactoring, code auditing).
-    * Open-Source Tool Adapter: Standardized JSON interface allowing external open-source skills to plug directly into the harness without re-engineering.
-    * Standardized Logging: Stream `stdout`/`stderr` and process exit codes back to `workboard_cards.result_payload`.
+### Phase 5: Workforce Definitions & Permission Scoping, Standardized Agent Roster Instantiation
+* [ ] **Step 15:** Convert the full 5-agent workforce to the Phase 3 three-file specification:
+    * *AxxBot (Tier 1 Chief of Staff):* Intent parsing, workboard card creation, triage on blocked tasks, user status reporting. Denied direct shell execution (`terminal:exec`). (Workboard orchestration, card decomposition, blocked task triage.)
+    * *Noid (Tier 2 Coder):* Code analysis, task decomposition, file editing, and test verification. Restricted to project workspace. (File editing, code refactoring, test script creation.)
+    * *ExecuBot (Tier 2 OS Delegate):* Shell/sandbox execution inside `axx_env`. (Virtualenv command execution, test runner, terminal primitives.)
+    * *DoBot (Tier 2 SysAdmin):* System telemetry, database maintenance, and skill management. (Database maintenance, harness health telemetry.)
+    * *PubBot (Tier 2 Publisher):* Documentation and Publication (web content) generation. (System documentation, release notes, Web UI content.)
 
 ---
 
-### Phase 5: CLI Controls & Interactive Terminal
-* [ ] **Step 13:** CLI Channel Interface (`channels/cli.ts`)
+### Phase 6: CLI Controls & Interactive Terminal
+* [ ] **Step 16:** CLI Channel Interface (`channels/cli.ts`)
     * Interactive terminal client for the CEO.
     * Direct prompt entry to spawn top-level Workboard cards through AxxBot.
     * CLI control commands:
@@ -68,23 +81,29 @@
         * `axx status` — View active, blocked, and completed Workboard cards with missing needs.
         * `axx pause` / `axx resume` — Emergency halt on the orchestrator event loop.
         * `axx logs [agent]` — Stream real-time agent output and tool execution logs.
+* [ ] **Step 17:** axx agent create: CLI command to generate new 3-file agent directories on demand without modifying TypeScript source code.
+* [ ] **Step 18:** axx tool toggle: CLI command to update system_control.json and enable/disable system tools at runtime.
+* [ ] **Step 19:** axx tool incorp: Tooling to wrap external MCP or open-source definitions into single-file harness modules.
 
 ---
 
-### Phase 6: Web UI, Dashboard & Cron Controls
-* [ ] **Step 14:** REST & WebSocket API Routes (`api/`)
+### Phase 7: Web UI, Dashboard & Cron Controls
+* [ ] **Step 20:** REST & WebSocket API Routes (`api/`)
     * Kanban board CRUD endpoints (`GET/POST /api/cards`, `PUT /api/cards/:id/status`).
     * Real-time WebSocket event broadcaster (`channels/web/ws-server.ts`) to push card updates, needs-triage alerts, and agent thought logs to the browser.
-* [ ] **Step 15:** Web Dashboard Frontend (`channels/web/public/`)
+* [ ] **Step 21:** Web Dashboard Frontend (`channels/web/public/`)
     * Visual Kanban board interface showing real-time card transitions (`ready` -> `in_progress` -> `done`).
     * Cron & Heartbeat Control Panel: UI toggle for background heartbeat loops, frequency sliders, and audit script toggles.
     * Permissions & Directives Viewer: UI interface to view active contracts, edit `SOUL.md` / `HUMAN.md` directives, and manage file read permissions for AxxBot.
 
 ---
 
-### Phase 7: Validation & End-to-End Factory Verification
-* [ ] **Step 16:** Full System Assembly & Playbook Finalization
+### Phase 8: Validation & End-to-End Factory Verification
+* [ ] **Step 22:** Full System Assembly & Playbook Finalization
     * Multi-agent dependency chain test (AxxBot creates card -> Noid writes code -> ExecuBot executes -> AxxBot reports final output).
+    * Lifecycle Integration Testing: Verify task flow from CLI input -> AxxBot decomposition -> Worker tool execution -> Card completion.
+    * Path-to-Success Validation: Test hardware/out-of-scope requests to ensure zero impossibility rejections and proper blocked-state rerequisite card generation.
+    * Self-Healing Loop Verification: Ensure non-zero exit codes from execute() trigger automatic retry and self-correction loops.
     * Verify zero-cost, 100% offline execution on Apple Silicon Metal.
     * Update `END-TO-END.md` and `README.md` with final production commands.
 
@@ -647,6 +666,9 @@ npx tsx -e "import { db } from './app/database.ts'; db.prepare(\"INSERT INTO wor
     tools/hello_world.py created:
     print("Hello from Axxanoid")
 * *END Result* *
+
+
+STOP ALL and REFACTOR -----
 --- living ---
 
 ### End Axxanoid Harness: Build & Refactor Tracker - detailed
