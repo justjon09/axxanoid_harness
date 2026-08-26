@@ -30,18 +30,18 @@
 ### Phase 3: Variable-Based Architecture & Registry Refactor
 Architectural Rationale: Transition from hardcoded logic, duplicate schema declarations, and monolithic switch statements to a 100% variable-driven, self-discovering system. This refactor decouples machine permissions, runtime metadata, and LLM reasoning while allowing single-file tool/skill additions and developer-controlled toggles.
 * [ ] **Step 8:** Standardized 3-File Agent Model (AXXANOID_HARNES/agents/{agent}/)
-    * config.json: Developer permission boundaries (allowed_tools: ["workboard_*", "write_file"])
-    * IDENTITY.md: Machine runtime metadata (assigned_model, tier, workspace_path).
+    * config.json: Developer permission boundaries and machine routing (allowed_tools: ["workboard_*", "write_file"], assigned_model, tier, workspace_path). Parsed natively by Node for zero-overhead validation.
+    * IDENTITY.md: Human/UI presentation metadata (Display Bio, Avatar path, Emoji).
     * SOUL.md: Cognitive prompt (persona, voice, boundaries, and the Path-to-Success invariant).
 * [ ] **Step 9:** Multi-Tiered Self-Contained Tool Engine (AXXANOID_HARNES/tools/)
     * [ ] **Step 9a:** Single-File Modules: Delete tools/native.ts and the switch statement in tools/executor.ts. Each tool file exports both its LLM JSON Schema and its Node.js execute() function.
-    * [ ] **Step 9b:** Hierarchical Directory Tree:
-        * tools/native/: Core OS primitives (run_terminal, write_file, read_file).
-        * tools/custom/: User-authored TypeScript execution tools.
-        * tools/imported/: Converted open-source / MCP tool definitions.
+    * [ ] **Step 9b:** Hierarchical Directory Tree & Precedence:
+        * tools/custom/: User-authored TypeScript execution tools. (Highest Priority)
         * tools/agent-built/: Tools generated dynamically at runtime by workers.
+        * tools/imported/: Converted open-source / MCP tool definitions.
+        * tools/native/: Core OS primitives (run_terminal, write_file, read_file). (Lowest Priority)
     * [ ] **Step 9c:**  Open-Source tools Adapter: Standardized JSON interface allowing external open-source tools to plug directly into the harness without re-engineering.
-    * [ ] **Step 9d:** Dynamic Auto-Loader (tools/index.ts): Scans all subdirectories at startup to populate ToolRegistry (Map<string, Tool>). Resolves name collisions using the strict directory precedence above.
+    * [ ] **Step 9d:**  Dynamic Auto-Loader (tools/index.ts): Scans all subdirectories at startup to populate ToolRegistry (Map<string, Tool>). Resolves name collisions using strict directory precedence.
 * [ ] **Step 10:** Multi-Tiered Skill Engine (AXXANOID_HARNES/skills/)
     * Skill Template Standard: High-level workflow protocols instructing agents on how to combine core OS primitives for domain tasks (e.g., plugin refactoring, code auditing).
     * Multi-step sequence workflows organized into matching tiers (skills/native/, skills/custom/, skills/imported/).
@@ -51,7 +51,7 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 
 ### Phase 4: System Control, Diagnostic Auditing & JIT Routing
 * [ ] **Step 11:** system_control.json: Master developer override file allowing toggles ("enabled": false) on any tool or skill by ID to disable buggy dependencies system-wide.
-* [ ] **Step 12:** Diagnostic Boot Audit: At boot, Node statically inspects all files in Tool/Skill registries. If a schema is invalid or exports are missing, Node outputs a detailed `[BOOT VERIFICATION FAILED]` terminal block (file path, error type, line number) and holds the orchestrator loop in a `PAUSED` state for live developer repair. Prevents LLMs from ever attempting unverified tool calls.
+* [ ] **Step 12:** Diagnostic Boot Audit: At boot, Node statically inspects all files in Tool/Skill registries. If a schema is invalid or exports are missing, Node outputs a detailed `[BOOT VERIFICATION FAILED]` terminal block (file path, error type, line number) and holds the orchestrator loop in a `PAUSED` state for live developer repair. Prevents LLMs from attempting unverified tool calls.
 * [ ] **Step 13:** Method A Two-Pass JIT Tool Routing (`app/orchestrator.ts`):
     * Pass 1: Inject a lightweight 1-line text menu (Name + Summary) into the system prompt based on `config.json` wildcard permissions.
     * Pass 2: Intercept LLM's requested tools, hydrate only those specific full JSON parameter schemas into the prompt, and execute to prevent context-window bloat.
