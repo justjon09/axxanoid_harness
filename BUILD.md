@@ -22,7 +22,7 @@
 * [X] **Step 7:** Strict Execution & Self-Healing Verification Gate (`app/orchestrator.ts`)
     * Prose Rejection: Reject conversational `user_message` responses as completions for worker tasks (e.g., Noid, ExecuBot).
     * OS Tool Execution: Intercept `tool_call` actions and dispatch directly to physical OS primitives in `tools/executor.ts`.
-    * Exit Code 0 Verification:** Mark cards `done` ONLY when physical file artifacts exist or terminal commands return exit code `0`.
+    * Exit Code 0 Verification: Mark cards `done` ONLY when physical file artifacts exist or terminal commands return exit code `0`.
     * Self-Healing Loop: Automatically catch `stderr` or non-zero exit codes, feed execution errors back into model context, and allow up to 3 self-correction retries before marking a task `failed`.
 
 ---
@@ -40,21 +40,23 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
         * tools/custom/: User-authored TypeScript execution tools.
         * tools/imported/: Converted open-source / MCP tool definitions.
         * tools/agent-built/: Tools generated dynamically at runtime by workers.
-    * [ ] **Step 9c:**  Open-Source skills Adapter: Standardized JSON interface allowing external open-source skills to plug directly into the harness without re-engineering.
-    * [ ] **Step 9d:**  Dynamic Auto-Loader (tools/index.ts): Scans all subdirectories at startup to populate ToolRegistry (Map<string, Tool>).
+    * [ ] **Step 9c:**  Open-Source tools Adapter: Standardized JSON interface allowing external open-source tools to plug directly into the harness without re-engineering.
+    * [ ] **Step 9d:** Dynamic Auto-Loader (tools/index.ts): Scans all subdirectories at startup to populate ToolRegistry (Map<string, Tool>). Resolves name collisions using the strict directory precedence above.
 * [ ] **Step 10:** Multi-Tiered Skill Engine (AXXANOID_HARNES/skills/)
     * Skill Template Standard: High-level workflow protocols instructing agents on how to combine core OS primitives for domain tasks (e.g., plugin refactoring, code auditing).
     * Multi-step sequence workflows organized into matching tiers (skills/native/, skills/custom/, skills/imported/).
-    * Open-Source skills Adapter: Standardized JSON interface allowing external open-source skills to plug directly into the harness without re-engineering.
     * Auto-discovered at boot time into a central SkillRegistry.
 
 ---
 
-### Phase 4: System Control & Startup AI Verification
+### Phase 4: System Control, Diagnostic Auditing & JIT Routing
 * [ ] **Step 11:** system_control.json: Master developer override file allowing toggles ("enabled": false) on any tool or skill by ID to disable buggy dependencies system-wide.
-* [ ] **Step 12:** Startup AI Verification: At boot, Node compiles active registry manifests and sends a verification request to llama-server to validate parameters and flag schema conflicts before opening the pulse loop.
-* [ ] **Step 13:** Standardized Logging: Stream `stdout`/`stderr` and process exit codes back to `workboard_cards.result_payload`.
-* [ ] **Step 14:** Autonomous Task Decomposition & Needs-Based Blocking
+* [ ] **Step 12:** Diagnostic Boot Audit: At boot, Node statically inspects all files in Tool/Skill registries. If a schema is invalid or exports are missing, Node outputs a detailed `[BOOT VERIFICATION FAILED]` terminal block (file path, error type, line number) and holds the orchestrator loop in a `PAUSED` state for live developer repair. Prevents LLMs from ever attempting unverified tool calls.
+* [ ] **Step 13:** Method A Two-Pass JIT Tool Routing (`app/orchestrator.ts`):
+    * Pass 1: Inject a lightweight 1-line text menu (Name + Summary) into the system prompt based on `config.json` wildcard permissions.
+    * Pass 2: Intercept LLM's requested tools, hydrate only those specific full JSON parameter schemas into the prompt, and execute to prevent context-window bloat.
+* [ ] **Step 14:** Standardized Logging: Stream `stdout`/`stderr` and process exit codes back to `workboard_cards.result_payload`.
+* [ ] **Step 15:** Autonomous Task Decomposition & Needs-Based Blocking
     * Sub-Task Generation:*Tier 2 workers (e.g., Noid) pull top-level cards and emit `workboard_mutation` actions to spawn linked micro-step child cards (e.g., read codebase -> create backup -> write patch -> test/debug).
     * Needs Verification: Worker agents inspect dependencies and permissions (read/write access, environment setup, missing binaries) before executing a card.
     * Needs-Based Blocking: If a required permission, tool, or environment binary is missing/failing, the worker mutates the card status to `blocked` with a structured payload: `{ "missing_need": "...", "suggestion": "..." }`.
@@ -63,7 +65,7 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 ---
 
 ### Phase 5: Workforce Definitions & Permission Scoping, Standardized Agent Roster Instantiation
-* [ ] **Step 15:** Convert the full 5-agent workforce to the Phase 3 three-file specification:
+* [ ] **Step 16:** Convert the full 5-agent workforce to the Phase 3 three-file specification:
     * *AxxBot (Tier 1 Chief of Staff):* Intent parsing, workboard card creation, triage on blocked tasks, user status reporting. Denied direct shell execution (`terminal:exec`). (Workboard orchestration, card decomposition, blocked task triage.)
     * *Noid (Tier 2 Coder):* Code analysis, task decomposition, file editing, and test verification. Restricted to project workspace. (File editing, code refactoring, test script creation.)
     * *ExecuBot (Tier 2 OS Delegate):* Shell/sandbox execution inside `axx_env`. (Virtualenv command execution, test runner, terminal primitives.)
@@ -73,7 +75,7 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 ---
 
 ### Phase 6: CLI Controls & Interactive Terminal
-* [ ] **Step 16:** CLI Channel Interface (`channels/cli.ts`)
+* [ ] **Step 17:** CLI Channel Interface (`channels/cli.ts`)
     * Interactive terminal client for the CEO.
     * Direct prompt entry to spawn top-level Workboard cards through AxxBot.
     * CLI control commands:
@@ -81,17 +83,17 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
         * `axx status` — View active, blocked, and completed Workboard cards with missing needs.
         * `axx pause` / `axx resume` — Emergency halt on the orchestrator event loop.
         * `axx logs [agent]` — Stream real-time agent output and tool execution logs.
-* [ ] **Step 17:** axx agent create: CLI command to generate new 3-file agent directories on demand without modifying TypeScript source code.
-* [ ] **Step 18:** axx tool toggle: CLI command to update system_control.json and enable/disable system tools at runtime.
-* [ ] **Step 19:** axx tool incorp: Tooling to wrap external MCP or open-source definitions into single-file harness modules.
+* [ ] **Step 18:** axx agent create: CLI command to generate new 3-file agent directories on demand without modifying TypeScript source code.
+* [ ] **Step 19:** axx tool toggle: CLI command to update system_control.json and enable/disable system tools at runtime.
+* [ ] **Step 20:** axx tool incorp: Tooling to wrap external MCP or open-source definitions into single-file harness modules.
 
 ---
 
 ### Phase 7: Web UI, Dashboard & Cron Controls
-* [ ] **Step 20:** REST & WebSocket API Routes (`api/`)
+* [ ] **Step 21:** REST & WebSocket API Routes (`api/`)
     * Kanban board CRUD endpoints (`GET/POST /api/cards`, `PUT /api/cards/:id/status`).
     * Real-time WebSocket event broadcaster (`channels/web/ws-server.ts`) to push card updates, needs-triage alerts, and agent thought logs to the browser.
-* [ ] **Step 21:** Web Dashboard Frontend (`channels/web/public/`)
+* [ ] **Step 22:** Web Dashboard Frontend (`channels/web/public/`)
     * Visual Kanban board interface showing real-time card transitions (`ready` -> `in_progress` -> `done`).
     * Cron & Heartbeat Control Panel: UI toggle for background heartbeat loops, frequency sliders, and audit script toggles.
     * Permissions & Directives Viewer: UI interface to view active contracts, edit `SOUL.md` / `HUMAN.md` directives, and manage file read permissions for AxxBot.
@@ -99,7 +101,7 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 ---
 
 ### Phase 8: Validation & End-to-End Factory Verification
-* [ ] **Step 22:** Full System Assembly & Playbook Finalization
+* [ ] **Step 23:** Full System Assembly & Playbook Finalization
     * Multi-agent dependency chain test (AxxBot creates card -> Noid writes code -> ExecuBot executes -> AxxBot reports final output).
     * Lifecycle Integration Testing: Verify task flow from CLI input -> AxxBot decomposition -> Worker tool execution -> Card completion.
     * Path-to-Success Validation: Test hardware/out-of-scope requests to ensure zero impossibility rejections and proper blocked-state rerequisite card generation.
@@ -695,6 +697,8 @@ STOP ALL and REFACTOR -----
   - [X] **Step 5c:** Connect orchestrator loop to server lifespan (`app/main.ts`).
 - [X] **Step 6:** Engine Client & Schema Translation Layer (`engine/llama-client.ts` & `engine/translator.ts`)
 - [X] **Step 7:** Strict Execution & Self-Healing Verification Gate (app/orchestrator.ts & tools/executor.ts)
+
+
 - [ ] **Step 8:** Agent Personas & Scaffolding (agents/)
 - [ ] **Step 9:** Permission Contracts (contracts.json per agent)
 - [ ] **Step 10:** Autonomous Task Decomposition & Needs-Based Blocking
@@ -704,6 +708,22 @@ STOP ALL and REFACTOR -----
 - [ ] **Step 14:** REST & WebSocket API Routes (api/)
 - [ ] **Step 15:** Web Dashboard Frontend (channels/web/public/)
 - [ ] **Step 16:** Full System Assembly & Playbook Finalization 
+- [ ] **Step 8:** Standardized 3-File Agent Model (config.json, IDENTITY.md, SOUL.md)
+- [ ] **Step 9:** Multi-Tiered Self-Contained Tool Engine (Directory precedence & auto-discovery)
+- [ ] **Step 10:** Multi-Tiered Skill Engine (Workflow templates & auto-discovery)
+- [ ] **Step 11:** System Control & Diagnostic Boot Audit (system_control.json & static file inspection)
+* [ ] **Step 12:** Diagnostic Boot Audit: At boot, Node statically inspects all files in Tool/Skill registries.
+- [ ] **Step 13:** Method A Two-Pass JIT Tool Routing (app/orchestrator.ts refactor)
+- [ ] **Step 14:** Standardized Logging (stdout/stderr to memory.db)
+- [ ] **Step 15:** Autonomous Task Decomposition & Needs-Based Blocking
+- [ ] **Step 16:** Full Agent Roster Standardization (AxxBot, Noid, ExecuBot, DoBot, PubBot)
+- [ ] **Step 17:** CLI Channel Interface (channels/cli.ts)
+- [ ] **Step 18:** CLI Generators (axx agent create, axx tool toggle)
+- [ ] **Step 19:** CLI Generators (axx tool toggle)
+- [ ] **Step 20:** MCP / Open-Source Tool Import Automation
+- [ ] **Step 21:** REST & WebSocket API Routes (api/)
+- [ ] **Step 22:** Web Dashboard Frontend (channels/web/public/)
+- [ ] **Step 23:** Full System Assembly & Playbook Finalization
 
 
 ## Completed Log
