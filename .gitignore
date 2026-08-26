@@ -48,3 +48,5 @@ engine/models/*
 *.db
 *.db-wal
 *.db-shm
+# Agent Avatars
+agents/avatars/*.png
