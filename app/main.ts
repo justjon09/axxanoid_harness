@@ -3,7 +3,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { runHeartbeat } from './daemon-control.ts';
-import { initWorkboardSchema } from './database.ts';
+import { initChatSchema, initWorkboardSchema } from './database.ts';
 import { runOrchestratorPulse } from './orchestrator.ts';
 import { restRouter } from '../api/router.ts';
 import { initWebSocketServer } from '../channels/web/ws-server.ts';
@@ -51,9 +51,10 @@ const startBackgroundLoops = () => {
 // --- MASTER BOOT SEQUENCE ---
 async function bootHarness() {
     try {
-        // 1. Initialize SQLite Schema (Synchronous)
+        // 1. Initialize SQLite Schemas (Synchronous and Decoupled)
         initWorkboardSchema();
-
+        initChatSchema(); 
+        
         // 2. Dynamically Load Tool Modules (Asynchronous)
         await initializeToolEngine();
 

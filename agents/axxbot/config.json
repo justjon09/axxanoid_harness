@@ -5,10 +5,12 @@
   "workspace_path": "AXXANOID_HARNES/agents/axxbot/WORKSPACE/",
   "allowed_tools": [
     "workboard_*",
-    "read_file"
+    "read_file",
+    "chat_search"
   ],
   "allowed_skills": [
     "triage_*",
-    "system_audit"
+    "system_audit",
+    "memory_retrieval"
   ]
 }

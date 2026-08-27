@@ -184,6 +184,22 @@ function closeModal() {
     overlay.style.display = 'none';
 }
 
+// --- Chat Data Fetching ---
+async function fetchChatHistory() {
+    try {
+        const res = await fetch('/api/chat');
+        const json = await res.json();
+        if (json.success && json.data) {
+            chatFeed.innerHTML = ''; // Clear the default waiting message
+            json.data.forEach(msg => {
+                appendChat(msg.content, msg.role === 'user' ? 'ceo' : 'system');
+            });
+        }
+    } catch (err) {
+        console.error("Failed to fetch chat history:", err);
+    }
+}
+
 // --- Event Listeners ---
 chatForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -229,6 +245,7 @@ document.addEventListener('keydown', (e) => {
 // --- Boot ---
 connectWebSocket();
 fetchCards();
+fetchChatHistory();
 
 // Initial system status pull to set the button correctly
 fetch('/api/system/status')

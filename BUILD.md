@@ -737,6 +737,23 @@ removed routing from
                 * Remove the Chat Forwarding from the Orchestrator (app/orchestrator.ts)
             * Equip AxxBot with a create_task Tool: AxxBot will read the chat and decide if it needs to use a tool to add a card to the Workboard, or just respond with text.
             * Format Chat Outputs Cleanly: Ensure UI text responses are formatted properly.
+        * Dedicated chat_history table in SQLite.
+            * Add Chat Persistence to the Database (app/database.ts)
+            * Update the API Router (api/router.ts)
+            * Update the UI to Load History (channels/web/public/assets/app.js)
+            * Corrected Database Setup
+            * Boot the Chat Schema Independently (app/main.ts)
+                                            [1:42:37 PM] System connected to broadcast server.
+                                            [1:42:37 PM] Harness WS Live
+                                            [1:42:57 PM] [ERROR] Chat routing failed: no such column: id
+                                            [1:42:57 PM] Chat submission failed: no such column: id
+            * Build the Memory Search Tool
+                * Create tools/native/chat_search.ts
+                * Update Master System Controls TOOLS (configs/system_control.json)
+                * Grant AxxBot TOOL Permission (agents/axxbot/config.json)
+                * Create skills/native/memory_retrieval.md
+                * Update Master System Controls SKILLS (configs/system_control.json)
+                * Grant AxxBot SKILL Permission (agents/axxbot/config.json)
 
 
 --- living ---

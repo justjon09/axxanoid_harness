@@ -6,7 +6,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const dbPath = path.resolve(__dirname, '../memory.db');
-
 export const db = new Database(dbPath);
 
 // Crucial pragmas for concurrent Node.js / Python access
@@ -38,4 +37,16 @@ export function initWorkboardSchema() {
         );
     `);
     console.log(">>> [DATABASE] Shared SQLite Workboard schema initialized in WAL mode.");
+}
+
+export function initChatSchema() {
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS chat_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            role TEXT NOT NULL,
+            content TEXT NOT NULL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+    `);
+    console.log(">>> [DATABASE] Command Center Chat schema initialized.");
 }
