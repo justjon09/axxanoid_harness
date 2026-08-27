@@ -274,12 +274,6 @@ export async function processTask(task: WorkboardCard) {
                     agent: task.assignee,
                     action 
                 };
-
-                // Forward Teir 1 direct text replies back to the Chat Feed
-                if (!isWorker && action.type === 'user_message') {
-                    const replyContent = action.payload?.content || action.raw_response;
-                    broadcastUpdate('chat_msg', { sender: 'AxxBot', message: replyContent });
-                }
             }
         } catch (error: any) {
             console.error(`>>> [INFERENCE ERROR] Attempt ${attempts} failed: ${error.message}`);

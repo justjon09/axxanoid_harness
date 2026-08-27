@@ -730,6 +730,13 @@ removed routing from
         * Update (app/orchestrator.ts)
             * Loosen Teir 1 System Prompt - systemInstruction
             * Broadcast AxxBot's Chat to the UI
+            *every conversational reply as a new "task" on the Workboard*
+        * Decouple the Chat Interface from the Task Execution Pipeline.
+            * Create a Dedicated Chat Route: Bypass the Workboard entirely for simple text input.
+                * Rebuild the Chat Route (api/router.ts)
+                * Remove the Chat Forwarding from the Orchestrator (app/orchestrator.ts)
+            * Equip AxxBot with a create_task Tool: AxxBot will read the chat and decide if it needs to use a tool to add a card to the Workboard, or just respond with text.
+            * Format Chat Outputs Cleanly: Ensure UI text responses are formatted properly.
 
 
 --- living ---
