@@ -8,12 +8,13 @@ import { broadcastUpdate } from '../channels/web/ws-server.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PAUSE_FILE = path.resolve(__dirname, '../../.PAUSED');
-const CONTROL_FILE = path.resolve(__dirname, '../../configs/system_control.json');
+
+const PAUSE_FILE = path.resolve(__dirname, '../.PAUSED');
+const CONTROL_FILE = path.resolve(__dirname, '../configs/system_control.json');
 
 // --- HELPER: Discover Tier 1 Agent dynamically ---
 function getTier1AgentId(): string {
-    const agentsDir = path.resolve(__dirname, '../../agents');
+    const agentsDir = path.resolve(__dirname, '../agents');
     if (!fs.existsSync(agentsDir)) return 'unknown';
     
     for (const folder of fs.readdirSync(agentsDir)) {

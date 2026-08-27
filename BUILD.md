@@ -719,6 +719,18 @@ removed routing from
         * The Style (channels/web/public/assets/style.css)
         * The Logic (channels/web/public/assets/app.js)
     * Verify
+        *http://127.0.0.1:8000/*
+            *{"message":"Axxanoid OS Daemon available"}
+        * Update app/main.ts - express.static
+            * LOOKS GOOD - No Function
+        * Update (api/router.ts)
+            * successfully discover AxxBot as the Tier 1 router, spawn the task, and instantly render it on the board!
+            *Required Refresh to see card move to done*
+            *the Orchestrator doesn't know it should push user_message payloads back into the Web UI's Command Center chat feed!*
+        * Update (app/orchestrator.ts)
+            * Loosen Teir 1 System Prompt - systemInstruction
+            * Broadcast AxxBot's Chat to the UI
+
 
 --- living ---
 

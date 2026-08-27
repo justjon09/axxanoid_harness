@@ -1,5 +1,7 @@
-import express from 'express';
 import cors from 'cors';
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { runHeartbeat } from './daemon-control.ts';
 import { initWorkboardSchema } from './database.ts';
 import { runOrchestratorPulse } from './orchestrator.ts';
@@ -8,6 +10,8 @@ import { initWebSocketServer } from '../channels/web/ws-server.ts';
 import { initializeSkillEngine } from '../skills/index.ts';
 import { initializeToolEngine } from '../tools/index.ts';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -22,12 +26,11 @@ app.use(cors({
 
 app.use(express.json());
 
+// Serve the static frontend dashboard
+app.use(express.static(path.join(__dirname, '../channels/web/public')));
+
 // Mount the API routes
 app.use('/api', restRouter);
-
-app.get('/', (req, res) => {
-    res.json({ message: "Axxanoid OS Daemon available" });
-});
 
 let heartbeatInterval: NodeJS.Timeout;
 let orchestratorInterval: NodeJS.Timeout;
@@ -53,6 +56,7 @@ async function bootHarness() {
 
         // 2. Dynamically Load Tool Modules (Asynchronous)
         await initializeToolEngine();
+
         // 2b. Dynamically Load Skill Playbooks
         await initializeSkillEngine();
 

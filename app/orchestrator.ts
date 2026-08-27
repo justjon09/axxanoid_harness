@@ -180,10 +180,14 @@ export async function processTask(task: WorkboardCard) {
         }
     }
     
+    const systemInstruction = isWorker 
+        ? "You MUST issue an actionable JSON tool_call to perform work. Do NOT respond with plain conversational prose or explanations."
+        : "You are the Chief of Staff interacting with the CEO. If a directive requires action, use your tools to manage the workboard. If it is a conversational question, reply directly to the CEO.";
+
     const conversationHistory: ChatMessage[] = [
         {
             role: 'system',
-            content: `${agentSoul}\n\nYou MUST issue an actionable JSON tool_call to perform work. Do NOT respond with plain conversational prose or explanations.${skillContext}`
+            content: `${agentSoul}\n\n${systemInstruction}${skillContext}`
         },
         {
             role: 'user',
@@ -270,6 +274,12 @@ export async function processTask(task: WorkboardCard) {
                     agent: task.assignee,
                     action 
                 };
+
+                // Forward Teir 1 direct text replies back to the Chat Feed
+                if (!isWorker && action.type === 'user_message') {
+                    const replyContent = action.payload?.content || action.raw_response;
+                    broadcastUpdate('chat_msg', { sender: 'AxxBot', message: replyContent });
+                }
             }
         } catch (error: any) {
             console.error(`>>> [INFERENCE ERROR] Attempt ${attempts} failed: ${error.message}`);
