@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/channels/web/public/assets/style.css">
+    <title>Axxanoid OS // Command Center</title>
+</head>
+<body>
+
+    <header>
+        <div style="display:flex; align-items: center; gap: 15px;">
+            <h1>AXXANOID_OS // CMD_CENTER</h1>
+            <div id="ws-status">Connecting...</div>
+        </div>
+        <div class="header-controls">
+            <span style="font-size: 12px; color: var(--text-muted);" id="pulse-timer">Next Audit: 15:00</span>
+            <button class="btn" id="btn-pause">Halt Orchestrator</button>
+            <button class="btn" id="btn-settings" disabled title="Coming soon">System Controls</button>
+        </div>
+    </header>
+
+    <div id="dashboard-grid">
+        
+        <!-- Command Center -->
+        <div id="command-pane">
+            <div class="pane-header">Chief of Staff (AxxBot)</div>
+            <div id="chat-feed">
+                <div class="chat-msg system">Harness initialized. Awaiting CEO directive.</div>
+            </div>
+            <form id="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Enter directive..." autocomplete="off">
+                <button type="submit" class="btn">Send</button>
+            </form>
+        </div>
+
+        <!-- Kanban Board -->
+        <div id="kanban-pane">
+            <div class="column" id="col-blocked">
+                <div class="column-header"><span>Blocked</span><span class="count">0</span></div>
+                <div class="cards-container"></div>
+            </div>
+            <div class="column" id="col-ready">
+                <div class="column-header"><span>Ready</span><span class="count">0</span></div>
+                <div class="cards-container"></div>
+            </div>
+            <div class="column" id="col-in_progress">
+                <div class="column-header"><span>In Progress</span><span class="count">0</span></div>
+                <div class="cards-container"></div>
+            </div>
+            <div class="column" id="col-failed">
+                <div class="column-header"><span>Failed</span><span class="count">0</span></div>
+                <div class="cards-container"></div>
+            </div>
+            <div class="column" id="col-done">
+                <div class="column-header"><span>Done</span><span class="count">0</span></div>
+                <div class="cards-container"></div>
+            </div>
+        </div>
+
+        <!-- Telemetry Stream -->
+        <div id="telemetry-pane">
+            <div class="pane-header" style="border-bottom: 1px solid #333;">Daemon Telemetry Stream</div>
+            <div id="terminal-output"></div>
+        </div>
+
+    </div>
+
+    <!-- Details Modal -->
+    <div id="overlay">
+        <div id="modal">
+            <div id="modal-header">
+                <h3 style="margin:0;" id="modal-title">Card Details</h3>
+                <button class="btn" onclick="closeModal()">Close (Esc)</button>
+            </div>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+/* CSS Variables for Dark Mode Theme */
+:root {
+    --bg-base: #0d0d0d;
+    --bg-panel: #1a1a1a;
+    --bg-card: #252525;
+    --border-color: #333;
+    --text-main: #e0e0e0;
+    --text-muted: #888;
+    --accent-blue: #2196F3;
+    --accent-green: #4CAF50;
+    --accent-orange: #FF9800;
+    --accent-red: #F44336;
+    --accent-gray: #9E9E9E;
+}
+
+* { box-sizing: border-box; }
+
+body { 
+    font-family: ui-monospace, 'Cascadia Code', monospace; 
+    background: var(--bg-base); 
+    color: var(--text-main); 
+    margin: 0; 
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Top Header / System Controls */
+header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 10px 20px; 
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-color);
+    height: 50px;
+}
+
+header h1 { margin: 0; font-size: 16px; letter-spacing: 1px; color: var(--accent-blue); }
+
+.header-controls { display: flex; align-items: center; gap: 15px; }
+
+#ws-status { 
+    padding: 4px 8px; 
+    border-radius: 4px; 
+    font-size: 11px; 
+    background: var(--accent-orange); 
+    color: #000;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+#ws-status.connected { background: var(--accent-green); color: #fff;}
+
+.btn {
+    background: var(--bg-card);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+.btn:hover { background: #333; }
+.btn.active-red { background: var(--accent-red); color: white; border-color: var(--accent-red); }
+
+/* Main Grid Layout */
+#dashboard-grid {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    grid-template-rows: 1fr 250px;
+    flex: 1;
+    height: calc(100vh - 50px);
+}
+
+/* PANE 1: Command Center (Chat) */
+#command-pane {
+    grid-column: 1 / 2;
+    grid-row: 1 / 3;
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-panel);
+}
+
+.pane-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+#chat-feed {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chat-msg {
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.4;
+    max-width: 90%;
+}
+.chat-msg.ceo { background: #1e3a8a; align-self: flex-end; color: #fff; border-bottom-right-radius: 0; }
+.chat-msg.system { background: var(--bg-card); align-self: flex-start; border: 1px solid var(--border-color); border-bottom-left-radius: 0; }
+
+#chat-input-area {
+    padding: 15px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 10px;
+}
+#chat-input {
+    flex: 1;
+    background: var(--bg-base);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: inherit;
+}
+#chat-input:focus { outline: none; border-color: var(--accent-blue); }
+
+/* PANE 2: Tactical Workboard (Kanban) */
+#kanban-pane {
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+    display: flex;
+    gap: 15px;
+    padding: 15px;
+    overflow-x: auto;
+    background: var(--bg-base);
+}
+
+.column { 
+    flex: 1; 
+    min-width: 260px; 
+    background: var(--bg-panel); 
+    border-radius: 6px; 
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-color);
+}
+
+.column-header {
+    padding: 12px 15px;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-color);
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+}
+
+.cards-container {
+    padding: 10px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.card { 
+    background: var(--bg-card); 
+    padding: 12px; 
+    border-radius: 4px; 
+    border-left: 4px solid var(--border-color); 
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+.card:hover { transform: translateX(2px); background: #2a2a2a; }
+
+.card.ready { border-left-color: var(--accent-green); }
+.card.in_progress { border-left-color: var(--accent-blue); }
+.card.blocked { border-left-color: var(--accent-orange); }
+.card.done { border-left-color: var(--accent-gray); opacity: 0.6; }
+.card.failed { border-left-color: var(--accent-red); }
+
+.card-header { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;}
+.card-id { font-size: 10px; color: var(--text-muted); }
+.card-agent { background: #000; padding: 2px 6px; border-radius: 3px; font-size: 10px; border: 1px solid var(--border-color);}
+.card-title { font-size: 13px; line-height: 1.4; font-weight: bold; word-wrap: break-word;}
+
+/* PANE 3: Pulse & Telemetry Console */
+#telemetry-pane {
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+    border-top: 1px solid var(--border-color);
+    background: #000;
+    display: flex;
+    flex-direction: column;
+}
+
+#terminal-output {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #a9dc76; /* Standard terminal green/yellow */
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.log-line { margin: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 2px;}
+.log-error { color: #ff6188; }
+.log-system { color: #78dce8; }
+
+/* Modal overlay for detailed card inspection */
+#overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+}
+#modal {
+    background: var(--bg-panel);
+    width: 80%;
+    max-width: 800px;
+    max-height: 80vh;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+}
+#modal-header {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#modal-body {
+    padding: 15px;
+    overflow-y: auto;
+    flex: 1;
+}
+pre { background: var(--bg-base); padding: 15px; border-radius: 4px; overflow-x: auto; border: 1px solid var(--border-color); }

@@ -708,6 +708,10 @@ removed routing from
         *// POST UI to Kanban cards  restRouter.post('/cards', (req, res) => { ?????*
     * Upgrade the WebSocket Broadcaster (channels/web/ws-server.ts)
     * Telemetry Wiring (app/orchestrator.ts)
+    * The multi-pane Command Center
+        * The Structure (channels/web/public/index.html)
+        * The Style (channels/web/public/assets/style.css)
+        * The Logic (channels/web/public/assets/app.js)
 
 --- living ---
 
