@@ -691,6 +691,10 @@ removed routing from
     * Refactored tools/index.ts with Explicit Precedence & Tree Discovery
     * Open-Source tools Adapter: Standardized JSON -- import and use normalizeToolSchema
 * Step 10:* Multi-Tiered Skill Engine (AXXANOID_HARNES/skills/)
+    * mkdir -p skills/native skills/custom skills/agent-built skills/imported
+    * Create a Sample Native Skill (skills/native/system_telemetry.md)
+    * Ignite the Skill Engine at Boot (app/main.ts)
+
 
 --- living ---
 

@@ -4,6 +4,7 @@ import { runHeartbeat } from './daemon-control.ts';
 import { initWorkboardSchema } from './database.ts';
 import { runOrchestratorPulse } from './orchestrator.ts';
 import { initializeToolEngine } from '../tools/index.ts';
+import { initializeSkillEngine } from '../skills/index.ts';
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -49,6 +50,8 @@ async function bootHarness() {
 
         // 2. Dynamically Load Tool Modules (Asynchronous)
         await initializeToolEngine();
+        // 2b. Dynamically Load Skill Playbooks
+        await initializeSkillEngine();
 
         // 3. Initialize the master application
         const server = app.listen(PORT, () => {
