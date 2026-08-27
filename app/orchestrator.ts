@@ -165,9 +165,12 @@ export async function processTask(task: WorkboardCard) {
                     content: 'ERROR: Conversational responses are rejected. You must output a JSON tool_call payload (e.g. write_file or run_terminal) to perform physical work on the OS.'
                 });
 
-                lastResultPayload = {
-                    error: 'Rejected: Worker returned conversational text instead of an actionable tool call.',
-                    response: completion.content
+                // Standardized Wrapper
+                lastResultPayload = { 
+                    timestamp: new Date().toISOString(),
+                    agent: task.assignee,
+                    error: 'Rejected: Worker returned conversational text.', 
+                    response: completion.content 
                 };
                 continue;
             }
@@ -185,9 +188,12 @@ export async function processTask(task: WorkboardCard) {
                 console.log(`>>> [EXECUTION] Intercepted Tool [${action.target}]. Executing on OS...`);
                 const executionResult: ToolResult = await executeTool(action.target, action.payload);
 
-                lastResultPayload = {
-                    action,
-                    execution: executionResult
+                // Standardized Execution Wrapper
+                lastResultPayload = { 
+                    timestamp: new Date().toISOString(),
+                    agent: task.assignee,
+                    action, 
+                    execution: executionResult 
                 };
 
                 if (executionResult.success) {
@@ -208,16 +214,31 @@ export async function processTask(task: WorkboardCard) {
                 }
             } else {
                 taskCompleted = true;
-                lastResultPayload = { action };
+                lastResultPayload = { 
+                    timestamp: new Date().toISOString(),
+                    agent: task.assignee,
+                    action 
+                };
             }
         } catch (error: any) {
             console.error(`>>> [INFERENCE ERROR] Attempt ${attempts} failed: ${error.message}`);
-            lastResultPayload = { error: error.message };
+            lastResultPayload = { 
+                timestamp: new Date().toISOString(),
+                agent: task.assignee,
+                error: error.message 
+            };
         }
     }
 
+    // STATE PRESERVATION: Check if the card was manually mutated by an agent tool during this execution
+    const currentCardState = db.prepare(`SELECT status FROM workboard_cards WHERE id = ?`).get(task.id) as any;
+
+    // If the agent mutated its own status (e.g. to 'blocked'), respect it. Otherwise, fallback to done/failed.
+    const finalStatus = (currentCardState && currentCardState.status !== 'in_progress') 
+        ? currentCardState.status 
+        : (taskCompleted ? 'done' : 'failed');
+
     // Update task
-    const finalStatus = taskCompleted ? 'done' : 'failed';
     db.prepare(
         `
         UPDATE workboard_cards 

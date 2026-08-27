@@ -55,7 +55,7 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 * [X] **Step 13:** Method A Two-Pass JIT Tool Routing (`app/orchestrator.ts`):
     * Pass 1: Inject a lightweight 1-line text menu (Name + Summary) into the system prompt based on `config.json` wildcard permissions.
     * Pass 2: Intercept LLM's requested tools, hydrate only those specific full JSON parameter schemas into the prompt, and execute to prevent context-window bloat.
-* [ ] **Step 14:** Standardized Logging: Stream `stdout`/`stderr` and process exit codes back to `workboard_cards.result_payload`.
+* [X] **Step 14:** Standardized Logging: Stream `stdout`/`stderr` and process exit codes back to `workboard_cards.result_payload`.
 * [ ] **Step 15:** Autonomous Task Decomposition & Needs-Based Blocking
     * Sub-Task Generation:*Tier 2 workers (e.g., Noid) pull top-level cards and emit `workboard_mutation` actions to spawn linked micro-step child cards (e.g., read codebase -> create backup -> write patch -> test/debug).
     * Needs Verification: Worker agents inspect dependencies and permissions (read/write access, environment setup, missing binaries) before executing a card.
@@ -610,6 +610,10 @@ removed routing from
     * Refactor tools/index.ts
     * Refactor skills/index.ts
 * Step 14: Standardized Logging: Stream `stdout`/`stderr` and process exit codes back to `workboard_cards.result_payload`.
+    * Refactor tools/native/run_terminal.ts
+    * Refactor app/orchestrator.ts   
+        - update lastResultPayload
+        - add STATE PRESERVATION
 
 --- living ---
 

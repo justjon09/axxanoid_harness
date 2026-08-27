@@ -1,10 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { spawn } from 'child_process';
 import { HarnessToolDefinition } from '../../engine/translator.ts';
-
-const execAsync = promisify(exec);
 
 export interface ToolResult {
     success: boolean;
@@ -41,29 +38,42 @@ export async function execute(payload: Record<string, any>): Promise<ToolResult>
                 commandToRun = commandToRun.replace(/^python3?/, venvPython);
             }
         }
-        
-        const { stdout, stderr } = await execAsync(commandToRun, {
-            timeout: 30000,
-            cwd: process.cwd()
+
+        const result = await new Promise<{stdout: string, stderr: string, code: number | null}>((resolve) => {
+            let stdout = '';
+            let stderr = '';
+            
+            // Use spawn with bash -c to handle pipes/redirects and prevent buffer limit crashes
+            const proc = spawn('bash', ['-c', commandToRun], { cwd: process.cwd() });
+            
+            proc.stdout.on('data', (data) => stdout += data.toString());
+            proc.stderr.on('data', (data) => stderr += data.toString());
+            
+            proc.on('close', (code) => resolve({ stdout, stderr, code }));
+            proc.on('error', (err) => resolve({ stdout, stderr: err.message, code: 1 }));
         });
-        
-        if (stderr && stderr.trim().length > 0 && !stdout) {
-            return {
-                success: false,
-                output: stdout ? stdout.trim() : '',
-                error: stderr.trim()
-            };
-        }
+
+        // Standardized logging payload mapping exactly to standard streams
+        const logPayload = {
+            command: commandToRun,
+            stdout: result.stdout.trim(),
+            stderr: result.stderr.trim(),
+            exit_code: result.code
+        };
+
+        const success = result.code === 0;
         
         return {
-            success: true,
-            output: stdout.trim() || stderr.trim() || 'Command executed with zero return output.'
+            success: success,
+            output: JSON.stringify(logPayload, null, 2),
+            error: success ? undefined : `Command failed with exit code ${result.code}`
         };
+        
     } catch (err: any) {
         return {
             success: false,
-            output: err.stdout ? err.stdout.trim() : '',
-            error: err.stderr ? err.stderr.trim() : (err.message || String(err))
+            output: '',
+            error: err.message || String(err)
         };
     }
 }
