@@ -42,7 +42,7 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
         * tools/native/: Core OS primitives (run_terminal, write_file, read_file). (Lowest Priority)
     * [X] **Step 9c:**  Open-Source tools Adapter: Standardized JSON interface allowing external open-source tools to plug directly into the harness without re-engineering.
     * [X] **Step 9d:**  Dynamic Auto-Loader (tools/index.ts): Scans all subdirectories at startup to populate ToolRegistry (Map<string, Tool>). Resolves name collisions using strict directory precedence.
-* [ ] **Step 10:** Multi-Tiered Skill Engine (AXXANOID_HARNES/skills/)
+* [X] **Step 10:** Multi-Tiered Skill Engine (AXXANOID_HARNES/skills/)
     * Skill Template Standard: High-level workflow protocols instructing agents on how to combine core OS primitives for domain tasks (e.g., plugin refactoring, code auditing).
     * Multi-step sequence workflows organized into matching tiers (skills/native/, skills/custom/, skills/imported/).
     * Auto-discovered at boot time into a central SkillRegistry.
@@ -694,7 +694,23 @@ removed routing from
     * mkdir -p skills/native skills/custom skills/agent-built skills/imported
     * Create a Sample Native Skill (skills/native/system_telemetry.md)
     * Ignite the Skill Engine at Boot (app/main.ts)
-
+* Step 16: Convert the full 5-agent workforce to the Phase 3 three-file specification:
+    * Scaffold Noid's Workspace
+    * Create the file agents/noid/config.json
+    * Create the file agents/noid/IDENTITY.md
+    * Create the file agents/noid/SOUL.md
+    * Scaffold ExecuBot's Workspace
+    * Create the file agents/execubot/config.json
+    * Create the file agents/execubot/IDENTITY.md
+    * Create the file agents/execubot/SOUL.md
+    * Scaffold DoBot's Workspace
+    * Create the file agents/dobot/config.json
+    * Create the file agents/dobot/IDENTITY.md
+    * Create the file agents/dobot/SOUL.md
+    * Scaffold PubBot's Workspace
+    * Create the file agents/pubbot/config.json
+    * Create the file agents/pubbot/IDENTITY.md
+    * Create the file agents/pubbot/SOUL.md
 
 --- living ---
 
@@ -709,8 +725,9 @@ removed routing from
 - Task Orchestrator active: 5-second pulse loop sweeping Workboard cards and resolving dependency chains automatically (Domino Effect).
 - Verified inference loop and action parsing via task-104 test.
 - Built Strict Execution & Self-Healing Verification Gate (task-105 test)
-- Defined agent scafolding
 - Multi-Tiered Self-Contained Tool Engine 
+- Multi-Tiered Skill Engine 
+- 5-agent workforce within three-file specification
 - Active focus: Step 10: Multi-Tiered skills Engine 
 
 ## To-Do List (Next Actions)
@@ -726,13 +743,13 @@ removed routing from
 - [X] **Step 7:** Strict Execution & Self-Healing Verification Gate (app/orchestrator.ts & tools/executor.ts)
 - [X] **Step 8:** Standardized 3-File Agent Model (config.json, IDENTITY.md, SOUL.md)
 - [X] **Step 9:** Multi-Tiered Self-Contained Tool Engine (Directory precedence & auto-discovery)
-- [ ] **Step 10:** Multi-Tiered Skill Engine (Workflow templates & auto-discovery)
+- [X] **Step 10:** Multi-Tiered Skill Engine (Workflow templates & auto-discovery)
 - [ ] **Step 11:** System Control & Diagnostic Boot Audit (system_control.json & static file inspection)
 * [ ] **Step 12:** Diagnostic Boot Audit: At boot, Node statically inspects all files in Tool/Skill registries.
 - [ ] **Step 13:** Method A Two-Pass JIT Tool Routing (app/orchestrator.ts refactor)
 - [ ] **Step 14:** Standardized Logging (stdout/stderr to memory.db)
 - [ ] **Step 15:** Autonomous Task Decomposition & Needs-Based Blocking
-- [ ] **Step 16:** Full Agent Roster Standardization (AxxBot, Noid, ExecuBot, DoBot, PubBot)
+- [X] **Step 16:** Full Agent Roster Standardization (AxxBot, Noid, ExecuBot, DoBot, PubBot)
 - [ ] **Step 17:** CLI Channel Interface (channels/cli.ts)
 - [ ] **Step 18:** CLI Generators (axx agent create, axx tool toggle)
 - [ ] **Step 19:** CLI Generators (axx tool toggle)
@@ -758,5 +775,7 @@ removed routing from
 - [x] Implemented tools/executor.ts and closed-loop OS execution in app/orchestrator.ts (task-105 test)
 - [x] single agent scafolding setup AxxBot
 - [x] Multi-Tiered Self-Contained Tool Engine
+- [x] Multi-Tiered Skill Engine
+- [x] 5-agent workforce within three-file specification
 
 ### End Axxanoid Harness: Build & Refactor Tracker - Overview

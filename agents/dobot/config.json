@@ -1,0 +1,17 @@
+{
+  "agent_id": "dobot",
+  "tier": 2,
+  "assigned_model": "qwen2.5-coder-14b-instruct",
+  "workspace_path": "AXXANOID_HARNES/agents/dobot/WORKSPACE/",
+  "allowed_tools": [
+    "read_file",
+    "run_terminal",
+    "workboard_read",
+    "workboard_mutate",
+    "workboard_create"
+  ],
+  "allowed_skills": [
+    "system_telemetry",
+    "db_maintenance"
+  ]
+}
