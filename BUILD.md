@@ -101,15 +101,15 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 ---
 
 ### Phase 8: Validation & End-to-End Factory Verification
-* [ ] **Step 23:** Refactor Heartbeat
-* [ ] **Step 24:** Full System Assembly & Playbook Finalization
+* [ ] **Step 23:** Full System Assembly & Playbook Finalization
     * Multi-agent dependency chain test (AxxBot creates card -> Noid writes code -> ExecuBot executes -> AxxBot reports final output).
     * Lifecycle Integration Testing: Verify task flow from CLI input -> AxxBot decomposition -> Worker tool execution -> Card completion.
     * Path-to-Success Validation: Test hardware/out-of-scope requests to ensure zero impossibility rejections and proper blocked-state rerequisite card generation.
     * Self-Healing Loop Verification: Ensure non-zero exit codes from execute() trigger automatic retry and self-correction loops.
     * Verify zero-cost, 100% offline execution on Apple Silicon Metal.
     * Update `END-TO-END.md` and `README.md` with final production commands.
-* [ ] **Step 25:** tool / skills audit 
+* [ ] **Step 24:** tool / skills audit 
+* [ ] **Step 25:** Refactor Heartbeat
 * [ ] **Step 26:** Create use instructions (how to add tool / skill / agent, cli commands)
 
 ## END Axxanoid Harness: Master Build Outline
@@ -702,6 +702,12 @@ removed routing from
     * Create api/router.ts
     * Build the WebSocket Broadcaster (channels/web/ws-server.ts)
     * Wire Everything into app/main.ts -- Mount the API routes
+*  Step 22: Web Dashboard Frontend (`channels/web/public/`)
+    * Upgrade the API Routes (api/router.ts)
+        *// Find tier 1 agent (AxxBot)        const tier1Agent = 'axxbot'; // TO-DO We will dynamically resolve this in the UI logic later*
+        *// POST UI to Kanban cards  restRouter.post('/cards', (req, res) => { ?????*
+    * Upgrade the WebSocket Broadcaster (channels/web/ws-server.ts)
+    * Telemetry Wiring (app/orchestrator.ts)
 
 --- living ---
 
@@ -724,8 +730,9 @@ removed routing from
 - Diagnostic Boot Audit
 - Standardized Logging: Stream 
 - Autonomous Task Decomposition & Needs-Based Blocking
-- CLI Channel Interface 
-- Active focus: Step 21: REST & WebSocket API Routes (`api/`)
+- CLI Channel Interface
+- REST & WebSocket API Routes
+- Active focus: Step 22: Web Dashboard Frontend (`channels/web/public/`)
 
 
 ## To-Do List (Next Actions)
@@ -752,7 +759,7 @@ removed routing from
 - [X] **Step 18:** CLI Generators (axx agent create, axx tool toggle)
 - [X] **Step 19:** CLI Generators (axx tool toggle)
 - [X] **Step 20:** MCP / Open-Source Tool Import Automation
-- [ ] **Step 21:** REST & WebSocket API Routes (api/)
+- [X] **Step 21:** REST & WebSocket API Routes (api/)
 - [ ] **Step 22:** Web Dashboard Frontend (channels/web/public/)
 - [ ] **Step 23:** Full System Assembly & Playbook Finalization
 
@@ -780,5 +787,6 @@ removed routing from
 - [x] Standardized Logging: Stream 
 - [x] Autonomous Task Decomposition & Needs-Based Blocking
 - [x] CLI Channel Interface
+- [x] REST & WebSocket API Routes
 
 ### End Axxanoid Harness: Build & Refactor Tracker - Overview

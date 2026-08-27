@@ -3,6 +3,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { db } from './database.ts';
+import { broadcastUpdate } from '../channels/web/ws-server.ts'
 import { sendLlamaCompletion, ChatMessage } from '../engine/llama-client.ts';
 import { formatPromptForModel, parseAgentAction, HarnessToolDefinition } from '../engine/translator.ts';
 import { ToolRegistry, executeTool, ToolResult } from '../tools/index.ts';
@@ -198,6 +199,7 @@ export async function processTask(task: WorkboardCard) {
     while (attempts < maxAttempts && !taskCompleted) {
         attempts++;
         console.log(`>>> [ORCHESTRATOR] Task [${task.id}] Execution Attempt ${attempts}/${maxAttempts}`);
+        broadcastUpdate('telemetry_log', `[ORCHESTRATOR] Task [${task.id}] Execution Attempt ${attempts}/${maxAttempts}`);
 
         try {
             // Format message include ONLY the activeTools to the LLM
@@ -249,6 +251,7 @@ export async function processTask(task: WorkboardCard) {
 
                 if (executionResult.success) {
                     console.log(`>>> [EXECUTION VERIFIED SUCCESS]: ${executionResult.output}`);
+                    broadcastUpdate('telemetry_log', `[EXECUTION VERIFIED SUCCESS] for task ${task.id}`);
                     taskCompleted = true;
                 } else {
                     console.warn(`>>> [EXECUTION FAILED]: ${executionResult.error}`);
