@@ -3,6 +3,7 @@ import cors from 'cors';
 import { runHeartbeat } from './daemon-control.ts';
 import { initWorkboardSchema } from './database.ts';
 import { runOrchestratorPulse } from './orchestrator.ts';
+import { initializeToolEngine } from '../tools/index.ts';
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -40,24 +41,39 @@ const startBackgroundLoops = () => {
     }, 5000);
 };
 
-// Initialize schema on startup
-initWorkboardSchema();
+// --- MASTER BOOT SEQUENCE ---
+async function bootHarness() {
+    try {
+        // 1. Initialize SQLite Schema (Synchronous)
+        initWorkboardSchema();
 
-// Initialize the master application
-const server = app.listen(PORT, () => {
-    console.log(`>>> Booting Axxanoid Harness ....`);
-    console.log(`>>> API Listening on http://127.0.0.1:${PORT}`);
-    console.log(">>> [SYSTEM] Initializing startup heartbeat...");
-    runHeartbeat();
-    startBackgroundLoops();
-});
+        // 2. Dynamically Load Tool Modules (Asynchronous)
+        await initializeToolEngine();
 
-// Graceful Shutdown (Equivalent to FastAPI's 'finally' block in lifespan)
-process.on('SIGINT', () => {
-    console.log("\n>>> [SYSTEM] Shutting down daemon, Terminating heartbeat...");
-    clearInterval(heartbeatInterval);
-    clearInterval(orchestratorInterval);
-    server.close(() => {
-        process.exit(0);
-    });
-});
+        // 3. Initialize the master application
+        const server = app.listen(PORT, () => {
+            console.log(`>>> Booting Axxanoid Harness ....`);
+            console.log(`>>> API Listening on http://127.0.0.1:${PORT}`);
+            console.log(">>> [SYSTEM] Initializing startup heartbeat...");
+            runHeartbeat();
+            startBackgroundLoops();
+        });
+
+        // 4. Graceful Shutdown
+        process.on('SIGINT', () => {
+            console.log("\n>>> [SYSTEM] Shutting down daemon, Terminating heartbeat...");
+            clearInterval(heartbeatInterval);
+            clearInterval(orchestratorInterval);
+            server.close(() => {
+                process.exit(0);
+            });
+        });
+
+    } catch (error) {
+        console.error(">>> [FATAL BOOT ERROR] Failed to initialize Axxanoid Harness:", error);
+        process.exit(1);
+    }
+}
+
+// Ignite the engine
+bootHarness();

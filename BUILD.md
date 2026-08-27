@@ -34,14 +34,14 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
     * IDENTITY.md: Human/UI presentation metadata (Display Bio, Avatar path, Emoji).
     * SOUL.md: Cognitive prompt (persona, voice, boundaries, and the Path-to-Success invariant).
 * [ ] **Step 9:** Multi-Tiered Self-Contained Tool Engine (AXXANOID_HARNES/tools/)
-    * [ ] **Step 9a:** Single-File Modules: Delete tools/native.ts and the switch statement in tools/executor.ts. Each tool file exports both its LLM JSON Schema and its Node.js execute() function.
-    * [ ] **Step 9b:** Hierarchical Directory Tree & Precedence:
+    * [X] **Step 9a:** Single-File Modules: Delete tools/native.ts and the switch statement in tools/executor.ts. Each tool file exports both its LLM JSON Schema and its Node.js execute() function.
+    * [X] **Step 9b:** Hierarchical Directory Tree & Precedence:
         * tools/custom/: User-authored TypeScript execution tools. (Highest Priority)
         * tools/agent-built/: Tools generated dynamically at runtime by workers.
         * tools/imported/: Converted open-source / MCP tool definitions.
         * tools/native/: Core OS primitives (run_terminal, write_file, read_file). (Lowest Priority)
     * [ ] **Step 9c:**  Open-Source tools Adapter: Standardized JSON interface allowing external open-source tools to plug directly into the harness without re-engineering.
-    * [ ] **Step 9d:**  Dynamic Auto-Loader (tools/index.ts): Scans all subdirectories at startup to populate ToolRegistry (Map<string, Tool>). Resolves name collisions using strict directory precedence.
+    * [X] **Step 9d:**  Dynamic Auto-Loader (tools/index.ts): Scans all subdirectories at startup to populate ToolRegistry (Map<string, Tool>). Resolves name collisions using strict directory precedence.
 * [ ] **Step 10:** Multi-Tiered Skill Engine (AXXANOID_HARNES/skills/)
     * Skill Template Standard: High-level workflow protocols instructing agents on how to combine core OS primitives for domain tasks (e.g., plugin refactoring, code auditing).
     * Multi-step sequence workflows organized into matching tiers (skills/native/, skills/custom/, skills/imported/).
@@ -684,6 +684,11 @@ removed routing from
     * Create tools/native/workboard_read.ts
     * Create tools/native/workboard_create.ts
     * Create tools/native/workboard_mutate.ts
+    * Create the Auto-Loader (tools/index.ts)
+    * Update Orchestrator Imports (app/orchestrator.ts)
+    * Delete tools/executor.ts
+    * Initialize the Engine at Boot (app/main.ts) -- asyn wrapper refactor
+    * Refactored tools/index.ts with Explicit Precedence & Tree Discovery
 
 --- living ---
 

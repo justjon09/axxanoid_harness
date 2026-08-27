@@ -1,8 +1,7 @@
 import { db } from './database.ts';
 import { sendLlamaCompletion, ChatMessage } from '../engine/llama-client.ts';
 import { formatPromptForModel, parseAgentAction, HarnessToolDefinition } from '../engine/translator.ts';
-import { SYSTEM_TOOLS } from '../tools/native.ts'
-import { executeTool, ToolResult } from '../tools/executor.ts';
+import { SYSTEM_TOOLS, executeTool, ToolResult } from '../tools/index.ts';
 
 export interface WorkboardCard {
     id: string;
