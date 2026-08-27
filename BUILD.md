@@ -101,15 +101,16 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 ---
 
 ### Phase 8: Validation & End-to-End Factory Verification
-* [ ] **Step 23:** Full System Assembly & Playbook Finalization
+* [ ] **Step 23:** Refactor Heartbeat
+* [ ] **Step 24:** Full System Assembly & Playbook Finalization
     * Multi-agent dependency chain test (AxxBot creates card -> Noid writes code -> ExecuBot executes -> AxxBot reports final output).
     * Lifecycle Integration Testing: Verify task flow from CLI input -> AxxBot decomposition -> Worker tool execution -> Card completion.
     * Path-to-Success Validation: Test hardware/out-of-scope requests to ensure zero impossibility rejections and proper blocked-state rerequisite card generation.
     * Self-Healing Loop Verification: Ensure non-zero exit codes from execute() trigger automatic retry and self-correction loops.
     * Verify zero-cost, 100% offline execution on Apple Silicon Metal.
     * Update `END-TO-END.md` and `README.md` with final production commands.
-* [ ] **Step 24:** tool / skills audit 
-* [ ] **Step 25:** Create use instructions (how to add tool / skill / agent, cli commands)
+* [ ] **Step 25:** tool / skills audit 
+* [ ] **Step 26:** Create use instructions (how to add tool / skill / agent, cli commands)
 
 ## END Axxanoid Harness: Master Build Outline
 
@@ -625,6 +626,70 @@ removed routing from
     * Create channels/cli.ts
     * Wire the Pause Switch into the Orchestrator (app/orchestrator.ts)
     * Update the "scripts" block in your package.json
+    * Validate:
+    - must be in ~/axxanoid_harnes -- could add to path (add to end to end setup) or add to instructions "to use cli must be in root dir"
+**npm run axx -- status**            
+*Result*
+> axxanoid_harnes@1.0.0 axx
+> tsx channels/cli.ts status
+
+
+=== WORKBOARD STATUS ===
+
+[ BLOCKED ] (0)
+
+[ IN_PROGRESS ] (0)
+
+[ READY ] (0)
+
+[ FAILED ] (4)
+-> [task-103] (NOID) Write a hello world script
+-> [task-102] (NOID) Write a hello world script
+-> [task-101] (NOID) Write a hello world script
+-> [child-1] (DOBOT) Test API Endpoints
+
+[ DONE ] (3)
+-> [task-105] (NOID) Write hello script
+-> [task-104] (NOID) Write a hello world script
+-> [parent-1] (NOID) Build API Routes
+*End Result*
+**npm run axx -- pause**            
+*Result*
+> axxanoid_harnes@1.0.0 axx
+> tsx channels/cli.ts pause
+
+>>> [CLI] Orchestrator PAUSED. Existing tasks will finish, but no new tasks will be picked up.
+*End Result*
+**npm run axx -- add "Write a python script that prints 'Harness Active' and execute it."**            
+*Result*
+> axxanoid_harnes@1.0.0 axx
+> tsx channels/cli.ts add Write a python script that prints 'Harness Active' and execute it.
+
+>>> [CLI] Success: Added Task [task-0b9b8adb] for [AXXBOT]: "Write a python script that prints 'Harness Active' and execute it."
+*End Result*
+**npm run axx -- resume**            
+*Result*
+> axxanoid_harnes@1.0.0 axx
+> tsx channels/cli.ts resume
+
+>>> [CLI] Orchestrator RESUMED.
+-- AXXANOID_HARNES --
+>>> [ORCHESTRATOR] Found 1 READY task(s) on Workboard.
+    -> [CARD task-0b9b8adb] Assigned to: AXXBOT | Title: "Write a python script that prints 'Harness Active' and execute it."
+>>> [ORCHESTRATOR] Processing Task [task-0b9b8adb] with Assignee [AXXBOT]
+>>> [ORCHESTRATOR] Task [task-0b9b8adb] Execution Attempt 1/3
+>>> [ORCHESTRATOR] Task [task-0b9b8adb] Finalized -> STATUS: DONE
+*End Result*
+**npm run axx -- logs execubot**            
+*Result*
+> axxanoid_harnes@1.0.0 axx
+> tsx channels/cli.ts logs execubot
+
+
+=== LATEST LOGS (EXECUBOT) ===
+*End Result*
+
+
 
 --- living ---
 
