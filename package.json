@@ -6,7 +6,8 @@
   "scripts": {
     "start": "tsx app/main.ts",
     "dev": "tsx watch app/main.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "axx": "tsx channels/cli.ts"
   },
   "repository": {
     "type": "git",

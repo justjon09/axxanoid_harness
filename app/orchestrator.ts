@@ -302,6 +302,11 @@ export async function processTask(task: WorkboardCard) {
  * Main orchestrator pulse function.
  */
 export async function runOrchestratorPulse() {
+    // CLI Pause Override
+    if (fs.existsSync(path.resolve(__dirname, '../.PAUSED'))) {
+        return; // Silently skip this pulse if paused by the CEO
+    }
+
     try {
         // Auto-unblock child cards whose parent dependencies completed
         await resolveDependencies();

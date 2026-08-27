@@ -56,7 +56,7 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
     * Pass 1: Inject a lightweight 1-line text menu (Name + Summary) into the system prompt based on `config.json` wildcard permissions.
     * Pass 2: Intercept LLM's requested tools, hydrate only those specific full JSON parameter schemas into the prompt, and execute to prevent context-window bloat.
 * [X] **Step 14:** Standardized Logging: Stream `stdout`/`stderr` and process exit codes back to `workboard_cards.result_payload`.
-* [ ] **Step 15:** Autonomous Task Decomposition & Needs-Based Blocking
+* [X] **Step 15:** Autonomous Task Decomposition & Needs-Based Blocking
     * Sub-Task Generation:*Tier 2 workers (e.g., Noid) pull top-level cards and emit `workboard_mutation` actions to spawn linked micro-step child cards (e.g., read codebase -> create backup -> write patch -> test/debug).
     * Needs Verification: Worker agents inspect dependencies and permissions (read/write access, environment setup, missing binaries) before executing a card.
     * Needs-Based Blocking: If a required permission, tool, or environment binary is missing/failing, the worker mutates the card status to `blocked` with a structured payload: `{ "missing_need": "...", "suggestion": "..." }`.
@@ -621,6 +621,10 @@ removed routing from
         * Create skills/native/triage_blocked.md
     * Purging Hardcoded Names from app/orchestrator.ts
         * // --- HELPER: Dynamically Discover the Tier 1 Routing Agent ---
+* Step 17: CLI Channel Interface (`channels/cli.ts`)
+    * Create channels/cli.ts
+    * Wire the Pause Switch into the Orchestrator (app/orchestrator.ts)
+    * Update the "scripts" block in your package.json
 
 --- living ---
 
@@ -642,7 +646,8 @@ removed routing from
 - Master developer override file 
 - Diagnostic Boot Audit
 - Standardized Logging: Stream 
-- Active focus: Step 15: Autonomous Task Decomposition & Needs-Based Blocking
+- Autonomous Task Decomposition & Needs-Based Blocking
+- Active focus: Step 17: CLI Channel Interface (`channels/cli.ts`)
 
 
 ## To-Do List (Next Actions)
@@ -662,8 +667,8 @@ removed routing from
 - [X] **Step 11:** System Control (system_control.json)
 - [X] **Step 12:** Diagnostic Boot Audit: At boot, Node statically inspects all files in Tool/Skill registries.
 - [X] **Step 13:** Method A Two-Pass JIT Tool Routing (app/orchestrator.ts refactor)
-- [ ] **Step 14:** Standardized Logging (stdout/stderr to memory.db)
-- [ ] **Step 15:** Autonomous Task Decomposition & Needs-Based Blocking
+- [X] **Step 14:** Standardized Logging (stdout/stderr to memory.db)
+- [X] **Step 15:** Autonomous Task Decomposition & Needs-Based Blocking
 - [X] **Step 16:** Full Agent Roster Standardization (AxxBot, Noid, ExecuBot, DoBot, PubBot)
 - [ ] **Step 17:** CLI Channel Interface (channels/cli.ts)
 - [ ] **Step 18:** CLI Generators (axx agent create, axx tool toggle)
@@ -695,5 +700,6 @@ removed routing from
 - [x] JIT Tool Routing & Permission Scoping
 - [x] Diagnostic Boot Audit
 - [x] Standardized Logging: Stream 
+- [x] Autonomous Task Decomposition & Needs-Based Blocking
 
 ### End Axxanoid Harness: Build & Refactor Tracker - Overview

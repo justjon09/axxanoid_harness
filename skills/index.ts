@@ -80,7 +80,6 @@ export async function initializeSkillEngine() {
 
                 SkillRegistry.set(skillId, { id: skillId, content: content, sourceDir: tierDir });
 
-                const content = fs.readFileSync(filePath, 'utf-8');
                 console.log(`    -> Registered Skill: [${skillId}] from /${tierDir}`);
             } catch (e: any) {
                 if (e.message.includes('[BOOT VERIFICATION FAILED]')) {
