@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { HarnessToolDefinition } from '../engine/translator.ts';
+import {normalizeToolSchema, HarnessToolDefinition } from '../engine/translator.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -68,7 +68,13 @@ export async function initializeToolEngine() {
                 const module = await import(filePath);
 
                 if (module.schema && module.execute) {
-                    const toolName = module.schema.name;
+                    // Apply universal adapter ONLY to 'imported' tools.
+                    // Native, custom, and agent-built tools must strictly adhere to HarnessToolDefinition.
+                    const finalSchema = tierDir === 'imported' 
+                        ? normalizeToolSchema(module.schema) 
+                        : module.schema;
+
+                    const toolName = finalSchema.name;
 
                     // Precedence Check based on actual schema name
                     if (ToolRegistry.has(toolName)) {
@@ -78,12 +84,12 @@ export async function initializeToolEngine() {
                     }
 
                     ToolRegistry.set(toolName, {
-                        schema: module.schema,
+                        schema: finalSchema,
                         execute: module.execute,
                         sourceDir: tierDir
                     });
 
-                    SYSTEM_TOOLS.push(module.schema);
+                    SYSTEM_TOOLS.push(finalSchema);
                     console.log(`    -> Registered Tool: [${toolName}] from /${tierDir}`);
                 } else {
                     console.warn(`>>> [TOOL ENGINE WARNING] ${filePath} is missing 'schema' or 'execute' export.`);

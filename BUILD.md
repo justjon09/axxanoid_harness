@@ -33,14 +33,14 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
     * config.json: Developer permission boundaries and machine routing (allowed_tools: ["workboard_*", "write_file"], assigned_model, tier, workspace_path). Parsed natively by Node for zero-overhead validation.
     * IDENTITY.md: Human/UI presentation metadata (Display Bio, Avatar path, Emoji).
     * SOUL.md: Cognitive prompt (persona, voice, boundaries, and the Path-to-Success invariant).
-* [ ] **Step 9:** Multi-Tiered Self-Contained Tool Engine (AXXANOID_HARNES/tools/)
+* [X] **Step 9:** Multi-Tiered Self-Contained Tool Engine (AXXANOID_HARNES/tools/)
     * [X] **Step 9a:** Single-File Modules: Delete tools/native.ts and the switch statement in tools/executor.ts. Each tool file exports both its LLM JSON Schema and its Node.js execute() function.
     * [X] **Step 9b:** Hierarchical Directory Tree & Precedence:
         * tools/custom/: User-authored TypeScript execution tools. (Highest Priority)
         * tools/agent-built/: Tools generated dynamically at runtime by workers.
         * tools/imported/: Converted open-source / MCP tool definitions.
         * tools/native/: Core OS primitives (run_terminal, write_file, read_file). (Lowest Priority)
-    * [ ] **Step 9c:**  Open-Source tools Adapter: Standardized JSON interface allowing external open-source tools to plug directly into the harness without re-engineering.
+    * [X] **Step 9c:**  Open-Source tools Adapter: Standardized JSON interface allowing external open-source tools to plug directly into the harness without re-engineering.
     * [X] **Step 9d:**  Dynamic Auto-Loader (tools/index.ts): Scans all subdirectories at startup to populate ToolRegistry (Map<string, Tool>). Resolves name collisions using strict directory precedence.
 * [ ] **Step 10:** Multi-Tiered Skill Engine (AXXANOID_HARNES/skills/)
     * Skill Template Standard: High-level workflow protocols instructing agents on how to combine core OS primitives for domain tasks (e.g., plugin refactoring, code auditing).
@@ -689,6 +689,8 @@ removed routing from
     * Delete tools/executor.ts
     * Initialize the Engine at Boot (app/main.ts) -- asyn wrapper refactor
     * Refactored tools/index.ts with Explicit Precedence & Tree Discovery
+    * Open-Source tools Adapter: Standardized JSON -- import and use normalizeToolSchema
+* Step 10:* Multi-Tiered Skill Engine (AXXANOID_HARNES/skills/)
 
 --- living ---
 
@@ -704,7 +706,8 @@ removed routing from
 - Verified inference loop and action parsing via task-104 test.
 - Built Strict Execution & Self-Healing Verification Gate (task-105 test)
 - Defined agent scafolding
-- Active focus: Step 9:* Multi-Tiered Self-Contained Tool Engine 
+- Multi-Tiered Self-Contained Tool Engine 
+- Active focus: Step 10: Multi-Tiered skills Engine 
 
 ## To-Do List (Next Actions)
 - [X] **Step 1:** Scaffold the `AXXANOID_HARNES` physical directory structure.
@@ -718,7 +721,7 @@ removed routing from
 - [X] **Step 6:** Engine Client & Schema Translation Layer (`engine/llama-client.ts` & `engine/translator.ts`)
 - [X] **Step 7:** Strict Execution & Self-Healing Verification Gate (app/orchestrator.ts & tools/executor.ts)
 - [X] **Step 8:** Standardized 3-File Agent Model (config.json, IDENTITY.md, SOUL.md)
-- [ ] **Step 9:** Multi-Tiered Self-Contained Tool Engine (Directory precedence & auto-discovery)
+- [X] **Step 9:** Multi-Tiered Self-Contained Tool Engine (Directory precedence & auto-discovery)
 - [ ] **Step 10:** Multi-Tiered Skill Engine (Workflow templates & auto-discovery)
 - [ ] **Step 11:** System Control & Diagnostic Boot Audit (system_control.json & static file inspection)
 * [ ] **Step 12:** Diagnostic Boot Audit: At boot, Node statically inspects all files in Tool/Skill registries.
@@ -750,5 +753,6 @@ removed routing from
 - [x] Verified full lifecycle routing from Orchestrator to llama-server on port 8080 (task-104 test)
 - [x] Implemented tools/executor.ts and closed-loop OS execution in app/orchestrator.ts (task-105 test)
 - [x] single agent scafolding setup AxxBot
+- [x] Multi-Tiered Self-Contained Tool Engine
 
 ### End Axxanoid Harness: Build & Refactor Tracker - Overview
