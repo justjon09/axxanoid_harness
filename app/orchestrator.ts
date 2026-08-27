@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { db } from './database.ts';
 import { sendLlamaCompletion, ChatMessage } from '../engine/llama-client.ts';
@@ -32,6 +33,24 @@ function isAllowed(name: string, allowedList: string[]): boolean {
     });
 }
 
+// --- HELPER: Dynamically Discover the Tier 1 Routing Agent ---
+function getTier1AgentId(): string {
+    const agentsDir = path.resolve(__dirname, '../agents');
+    if (!fs.existsSync(agentsDir)) return 'unknown';
+    
+    const folders = fs.readdirSync(agentsDir);
+    for (const folder of folders) {
+        const configPath = path.join(agentsDir, folder, 'config.json');
+        if (fs.existsSync(configPath)) {
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+            if (config.tier === 1) {
+                return config.agent_id;
+            }
+        }
+    }
+    return 'unknown';
+}
+
 /**
  * Sweeps the database for blocked tasks whose dependencies are all complete,
  * automatically promoting them to 'ready' (The Domino Effect).
@@ -62,6 +81,32 @@ export async function resolveDependencies() {
     }
 }
 
+// Auto-Triage Loop
+export async function autoTriageBlockedCards() {
+    const tier1Agent = getTier1AgentId();
+    if (tier1Agent === 'unknown') return;
+
+    const blockedCards = db.prepare(`SELECT * FROM workboard_cards WHERE status = 'blocked' AND result_payload LIKE '%missing_need%'`).all() as WorkboardCard[];
+    
+    for (const card of blockedCards) {
+        const existing = db.prepare(`SELECT id FROM workboard_cards WHERE assignee = ? AND title = ? AND status IN ('ready', 'in_progress')`).get(tier1Agent, `Triage Blocked Card: ${card.id}`);
+        
+        if (!existing) {
+            const triageId = `task-${crypto.randomUUID().slice(0, 8)}`;
+            db.prepare(`
+                INSERT INTO workboard_cards (id, title, description, assignee, status) 
+                VALUES (?, ?, ?, ?, 'ready')
+            `).run(
+                triageId,
+                `Triage Blocked Card: ${card.id}`,
+                `Card ${card.id} is blocked. Read its payload for the 'missing_need'. Delegate a fix using workboard_create, then mark this triage task as done.`,
+                tier1Agent
+            );
+            console.log(`>>> [ORCHESTRATOR] Auto-Spawned Triage Task [${triageId}] for Blocked Card [${card.id}] assigned to [${tier1Agent.toUpperCase()}]`);
+        }
+    }
+}
+
 /**
  * Fetches the next available 'ready' cards assigned to worker agents.
  */
@@ -85,12 +130,6 @@ export async function processTask(task: WorkboardCard) {
     `).run(task.id);
     console.log(`>>> [ORCHESTRATOR] Processing Task [${task.id}] with Assignee [${task.assignee.toUpperCase()}]`);
 
-    const isWorker = ['noid', 'execubot', 'dobot'].includes(task.assignee.toLowerCase());
-    // Select model based on agent tier        
-    // Map assignee to exact model alias registered in models.ini
-    const modelAlias = task.assignee === 'axxbot' ? 'llama-3-groq-8b-tool-use' : 'qwen2.5-coder-14b-instruct';
-    // Map assignee to internal translator prompt formatter
-    const promptFormat = task.assignee === 'axxbot' ? 'llama3_groq' : 'qwen_coder';
     // JIT ROUTING & PERMISSION SCOPING
     const agentDir = path.resolve(__dirname, `../agents/${task.assignee.toLowerCase()}`);
     const configPath = path.join(agentDir, 'config.json');
@@ -100,10 +139,24 @@ export async function processTask(task: WorkboardCard) {
     let allowedSkillsList: string[] = [];
     let agentSoul = '';
 
+    // Default fallback configurations
+    let isWorker = true;
+    let modelAlias = 'qwen2.5-coder-14b-instruct';
+    let promptFormat: 'llama3_groq' | 'qwen_coder' = 'qwen_coder';
+
+    // Dynamically resolve everything from config.json
     if (fs.existsSync(configPath)) {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
         allowedToolsList = config.allowed_tools || [];
         allowedSkillsList = config.allowed_skills || [];
+        // Select model based on agent tier  
+        isWorker = config.tier !== 1;
+        if (config.assigned_model) {
+            // Map assignee to exact model alias registered in models.ini
+            modelAlias = config.assigned_model;
+            // Map assignee to internal translator prompt formatter
+            promptFormat = modelAlias.toLowerCase().includes('llama') ? 'llama3_groq' : 'qwen_coder';
+        }
     }
 
     if (fs.existsSync(soulPath)) {
@@ -157,9 +210,7 @@ export async function processTask(task: WorkboardCard) {
             // PROSE REJECTION: Worker agents MUST invoke tools, not chat
             if (isWorker && action.type === 'user_message') {
                 console.warn(`>>> [PROSE REJECTED] Worker [${task.assignee.toUpperCase()}] returned prose instead of a tool call.`);
-
                 conversationHistory.push({ role: 'assistant', content: completion.content });
-
                 conversationHistory.push({
                     role: 'user',
                     content: 'ERROR: Conversational responses are rejected. You must output a JSON tool_call payload (e.g. write_file or run_terminal) to perform physical work on the OS.'
@@ -203,10 +254,7 @@ export async function processTask(task: WorkboardCard) {
                     console.warn(`>>> [EXECUTION FAILED]: ${executionResult.error}`);
                     
                     // SELF-HEALING FEEDBACK: Push error back to LLM context
-                    conversationHistory.push({
-                        role: 'assistant',
-                        content: completion.content
-                    });
+                    conversationHistory.push({ role: 'assistant', content: completion.content });
                     conversationHistory.push({
                         role: 'user',
                         content: `TOOL EXECUTION ERROR (${action.target}): ${executionResult.error}\nFix the issue in your parameters/code and re-issue the tool_call.`
@@ -257,6 +305,7 @@ export async function runOrchestratorPulse() {
     try {
         // Auto-unblock child cards whose parent dependencies completed
         await resolveDependencies();
+        await autoTriageBlockedCards();
         // Fetch unblocked tasks ready for execution
         const readyTasks = getReadyTasks();
 

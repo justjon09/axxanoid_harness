@@ -614,6 +614,13 @@ removed routing from
     * Refactor app/orchestrator.ts   
         - update lastResultPayload
         - add STATE PRESERVATION
+* Step 15: Autonomous Task Decomposition & Needs-Based Blocking
+    * Skill Playbooks
+        * Create skills/native/task_decomposition.md
+        * Create skills/native/needs_blocking.md
+        * Create skills/native/triage_blocked.md
+    * Purging Hardcoded Names from app/orchestrator.ts
+        * // --- HELPER: Dynamically Discover the Tier 1 Routing Agent ---
 
 --- living ---
 
@@ -634,7 +641,9 @@ removed routing from
 - JIT Tool Routing & Permission Scoping
 - Master developer override file 
 - Diagnostic Boot Audit
-- Active focus: Standardized Logging: Stream 
+- Standardized Logging: Stream 
+- Active focus: Step 15: Autonomous Task Decomposition & Needs-Based Blocking
+
 
 ## To-Do List (Next Actions)
 - [X] **Step 1:** Scaffold the `AXXANOID_HARNES` physical directory structure.
@@ -685,5 +694,6 @@ removed routing from
 - [x] 5-agent workforce within three-file specification
 - [x] JIT Tool Routing & Permission Scoping
 - [x] Diagnostic Boot Audit
+- [x] Standardized Logging: Stream 
 
 ### End Axxanoid Harness: Build & Refactor Tracker - Overview
