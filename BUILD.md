@@ -75,7 +75,7 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 ---
 
 ### Phase 6: CLI Controls & Interactive Terminal
-* [ ] **Step 17:** CLI Channel Interface (`channels/cli.ts`)
+* [X] **Step 17:** CLI Channel Interface (`channels/cli.ts`)
     * Interactive terminal client for the CEO.
     * Direct prompt entry to spawn top-level Workboard cards through AxxBot.
     * CLI control commands:
@@ -83,8 +83,8 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
         * `axx status` — View active, blocked, and completed Workboard cards with missing needs.
         * `axx pause` / `axx resume` — Emergency halt on the orchestrator event loop.
         * `axx logs [agent]` — Stream real-time agent output and tool execution logs.
-* [ ] **Step 18:** axx agent create: CLI command to generate new 3-file agent directories on demand without modifying TypeScript source code.
-* [ ] **Step 19:** axx tool toggle: CLI command to update system_control.json and enable/disable system tools at runtime.
+* [X] **Step 18:** axx agent create: CLI command to generate new 3-file agent directories on demand without modifying TypeScript source code.
+* [X] **Step 19:** axx tool toggle: CLI command to update system_control.json and enable/disable system tools at runtime.
 * [ ] **Step 20:** axx tool incorp: Tooling to wrap external MCP or open-source definitions into single-file harness modules.
 
 ---
@@ -689,7 +689,10 @@ removed routing from
 === LATEST LOGS (EXECUBOT) ===
 *End Result*
 
-
+* Step 18: axx agent create && * Step 19: axx tool toggle
+    * extend channels/cli.ts
+    *RESULTS* Perfect outcome 
+* Step 20: axx tool incorp: Tooling to wrap external MCP or open-source definitions into single-file harness modules.
 
 --- living ---
 
@@ -712,7 +715,8 @@ removed routing from
 - Diagnostic Boot Audit
 - Standardized Logging: Stream 
 - Autonomous Task Decomposition & Needs-Based Blocking
-- Active focus: Step 17: CLI Channel Interface (`channels/cli.ts`)
+- CLI Channel Interface 
+- Active focus: Step 20: axx tool incorp: Tooling to wrap external MCP or open-source definitions into single-file harness modules.
 
 
 ## To-Do List (Next Actions)
@@ -735,9 +739,9 @@ removed routing from
 - [X] **Step 14:** Standardized Logging (stdout/stderr to memory.db)
 - [X] **Step 15:** Autonomous Task Decomposition & Needs-Based Blocking
 - [X] **Step 16:** Full Agent Roster Standardization (AxxBot, Noid, ExecuBot, DoBot, PubBot)
-- [ ] **Step 17:** CLI Channel Interface (channels/cli.ts)
-- [ ] **Step 18:** CLI Generators (axx agent create, axx tool toggle)
-- [ ] **Step 19:** CLI Generators (axx tool toggle)
+- [X] **Step 17:** CLI Channel Interface (channels/cli.ts)
+- [X] **Step 18:** CLI Generators (axx agent create, axx tool toggle)
+- [X] **Step 19:** CLI Generators (axx tool toggle)
 - [ ] **Step 20:** MCP / Open-Source Tool Import Automation
 - [ ] **Step 21:** REST & WebSocket API Routes (api/)
 - [ ] **Step 22:** Web Dashboard Frontend (channels/web/public/)
@@ -766,5 +770,6 @@ removed routing from
 - [x] Diagnostic Boot Audit
 - [x] Standardized Logging: Stream 
 - [x] Autonomous Task Decomposition & Needs-Based Blocking
+- [x] CLI Channel Interface
 
 ### End Axxanoid Harness: Build & Refactor Tracker - Overview
