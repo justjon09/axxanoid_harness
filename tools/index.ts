@@ -58,6 +58,13 @@ export async function initializeToolEngine() {
     ToolRegistry.clear();
     SYSTEM_TOOLS.length = 0;
 
+    // Read Master System Control
+    const controlPath = path.resolve(__dirname, '../configs/system_control.json');
+    let sysControl: any = { tools: {} };
+    if (fs.existsSync(controlPath)) {
+        sysControl = JSON.parse(fs.readFileSync(controlPath, 'utf-8'));
+    }
+
     // Process directories in strict order from HIGHEST to LOWEST priority
     for (const tierDir of TOOL_DIRECTORIES) {
         const dirPath = path.join(__dirname, tierDir);
@@ -67,45 +74,59 @@ export async function initializeToolEngine() {
             try {
                 const module = await import(filePath);
 
-                if (module.schema && module.execute) {
-                    // Apply universal adapter ONLY to 'imported' tools.
-                    // Native, custom, and agent-built tools must strictly adhere to HarnessToolDefinition.
-                    const finalSchema = tierDir === 'imported' 
-                        ? normalizeToolSchema(module.schema) 
-                        : module.schema;
-
-                    const toolName = finalSchema.name;
-
-                    // Precedence Check based on actual schema name
-                    if (ToolRegistry.has(toolName)) {
-                        const existing = ToolRegistry.get(toolName)!;
-                        console.log(`    -> [PRECEDENCE OVERRIDE] Skipped /${tierDir}/${path.basename(filePath)} ('${toolName}' registered by higher-priority /${existing.sourceDir})`);
-                        continue;
-                    }
-
-                    ToolRegistry.set(toolName, {
-                        schema: finalSchema,
-                        execute: module.execute,
-                        sourceDir: tierDir
-                    });
-
-                    SYSTEM_TOOLS.push(finalSchema);
-                    console.log(`    -> Registered Tool: [${toolName}] from /${tierDir}`);
-                } else {
-                    console.warn(`>>> [TOOL ENGINE WARNING] ${filePath} is missing 'schema' or 'execute' export.`);
+                // Diagnostic Boot Audit
+                if (!module.schema || !module.execute) {
+                    throw new Error(`[BOOT VERIFICATION FAILED] File ${filePath} is missing required 'schema' or 'execute' exports.`);
                 }
+                if (!module.schema.name) {
+                    throw new Error(`[BOOT VERIFICATION FAILED] Tool at ${filePath} has a malformed schema (missing 'name').`);
+                }
+
+                // Apply universal adapter ONLY to 'imported' tools.
+                // Native, custom, and agent-built tools must strictly adhere to HarnessToolDefinition.
+                const finalSchema = tierDir === 'imported' 
+                    ? normalizeToolSchema(module.schema) 
+                    : module.schema;
+
+                const toolName = finalSchema.name;
+
+                // System Control Killswitch
+                if (sysControl.tools && sysControl.tools[toolName] === false) {
+                    console.warn(`    -> [SYSTEM CONTROL] Tool [${toolName}] disabled globally. Skipping.`);
+                    continue;
+                }
+
+                // Precedence Check based on actual schema name
+                if (ToolRegistry.has(toolName)) {
+                    const existing = ToolRegistry.get(toolName)!;
+                    console.log(`    -> [PRECEDENCE OVERRIDE] Skipped /${tierDir}/${path.basename(filePath)} ('${toolName}' registered by higher-priority /${existing.sourceDir})`);
+                    continue;
+                }
+
+                ToolRegistry.set(toolName, {
+                    schema: finalSchema,
+                    execute: module.execute,
+                    sourceDir: tierDir
+                });
+
+                SYSTEM_TOOLS.push(finalSchema);
+                console.log(`    -> Registered Tool: [${toolName}] from /${tierDir}`);
+
             } catch (e: any) {
+                // If it's a critical verification failure, crash the boot sequence immediately
+                if (e.message.includes('[BOOT VERIFICATION FAILED]')) {
+                    throw e; 
+                }
                 console.error(`>>> [TOOL ENGINE ERROR] Failed to load ${filePath}: ${e.message}`);
             }
         }
     }
-    
     console.log(`>>> [TOOL ENGINE] Boot complete. Registered ${ToolRegistry.size} unique tool(s) in active registry.`);
 }
 
 export async function executeTool(target: string, payload: Record<string, any>): Promise<ToolResult> {
     const tool = ToolRegistry.get(target);
-    
+
     if (!tool) {
         return {
             success: false,

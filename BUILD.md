@@ -50,8 +50,8 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 ---
 
 ### Phase 4: System Control, Diagnostic Auditing & JIT Routing
-* [ ] **Step 11:** system_control.json: Master developer override file allowing toggles ("enabled": false) on any tool or skill by ID to disable buggy dependencies system-wide.
-* [ ] **Step 12:** Diagnostic Boot Audit: At boot, Node statically inspects all files in Tool/Skill registries. If a schema is invalid or exports are missing, Node outputs a detailed `[BOOT VERIFICATION FAILED]` terminal block (file path, error type, line number) and holds the orchestrator loop in a `PAUSED` state for live developer repair. Prevents LLMs from attempting unverified tool calls.
+* [X] **Step 11:** system_control.json: Master developer override file allowing toggles ("enabled": false) on any tool or skill by ID to disable buggy dependencies system-wide.
+* [X] **Step 12:** Diagnostic Boot Audit: At boot, Node statically inspects all files in Tool/Skill registries. If a schema is invalid or exports are missing, Node outputs a detailed `[BOOT VERIFICATION FAILED]` terminal block (file path, error type, line number) and holds the orchestrator loop in a `PAUSED` state for live developer repair. Prevents LLMs from attempting unverified tool calls.
 * [X] **Step 13:** Method A Two-Pass JIT Tool Routing (`app/orchestrator.ts`):
     * Pass 1: Inject a lightweight 1-line text menu (Name + Summary) into the system prompt based on `config.json` wildcard permissions.
     * Pass 2: Intercept LLM's requested tools, hydrate only those specific full JSON parameter schemas into the prompt, and execute to prevent context-window bloat.
@@ -65,7 +65,7 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 ---
 
 ### Phase 5: Workforce Definitions & Permission Scoping, Standardized Agent Roster Instantiation
-* [ ] **Step 16:** Convert the full 5-agent workforce to the Phase 3 three-file specification:
+* [X] **Step 16:** Convert the full 5-agent workforce to the Phase 3 three-file specification:
     * *AxxBot (Tier 1 Chief of Staff):* Intent parsing, workboard card creation, triage on blocked tasks, user status reporting. Denied direct shell execution (`terminal:exec`). (Workboard orchestration, card decomposition, blocked task triage.)
     * *Noid (Tier 2 Coder):* Code analysis, task decomposition, file editing, and test verification. Restricted to project workspace. (File editing, code refactoring, test script creation.)
     * *ExecuBot (Tier 2 OS Delegate):* Shell/sandbox execution inside `axx_env`. (Virtualenv command execution, test runner, terminal primitives.)
@@ -108,6 +108,8 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
     * Self-Healing Loop Verification: Ensure non-zero exit codes from execute() trigger automatic retry and self-correction loops.
     * Verify zero-cost, 100% offline execution on Apple Silicon Metal.
     * Update `END-TO-END.md` and `README.md` with final production commands.
+* [ ] **Step 24:** tool / skills audit 
+* [ ] **Step 25:** Create use instructions (how to add tool / skill / agent, cli commands)
 
 ## END Axxanoid Harness: Master Build Outline
 
@@ -375,117 +377,9 @@ test HTTP connectivity.
     Jeremys-MacBook-Pro: ~/axxanoid_harnes % curl http://127.0.0.1:8080/health             
     {"status":"ok"}%  
 * *END Result* *
-test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or failed):
-- Seed a ready Task:
-        npx tsx -e "import { db } from './app/database.ts'; db.prepare(\"INSERT INTO workboard_cards (id, title, description, assignee, status) VALUES ('task-101', 'Write a hello world script', 'Create a simple python hello world script', 'noid', 'ready')\").run();"
-    npm run dev
-* *Result* *
-    Jeremys-MacBook-Pro: ~/axxanoid_harnes % npm run dev
-
-        > axxanoid_harnes@1.0.0 dev
-        > tsx watch app/main.ts
-
-        >>> [DATABASE] Shared SQLite Workboard schema initialized in WAL mode.
-        >>> Booting Axxanoid Harness ....
-        >>> API Listening on http://127.0.0.1:8000
-        >>> [SYSTEM] Initializing startup heartbeat...
-        >>> [HEARTBEAT] Wake sequence initiated. Ingesting core directives into RAM...
-        >>> [HEARTBEAT WARNING] Missing directive file: SOUL.md. Skipping.
-        >>> [HEARTBEAT WARNING] Missing directive file: IDENTITY.md. Skipping.
-        >>> [HEARTBEAT WARNING] Missing directive file: HUMAN.md. Skipping.
-        >>> [HEARTBEAT WARNING] Missing directive file: HEARTBEAT.md. Skipping.
-        >>> [HEARTBEAT] Executing dynamic audits from HEARTBEAT.md...
-        >>> [HEARTBEAT] Audit complete. Ready for Engine Inference.
-        >>> [SYSTEM] Initializing background heartbeat (15m pulse)...
-        >>> [SYSTEM] Initializing Workboard Orchestrator (5s pulse)...
-        >>> [ORCHESTRATOR] Found 1 READY task(s) on Workboard.
-            -> [CARD task-101] Assigned to: NOID | Title: "Write a hello world script"
-        >>> [ORCHESTRATOR] Processing Task [task-101] with Assignee [NOID]
-        >>> [ENGINE CLIENT ERROR] Failed to communicate with llama-server: llama-server returned HTTP 400: {"error":{"code":400,"message":"model 'qwen_coder' not found","type":"invalid_request_error"}}
-        >>> [ORCHESTRATOR] Task [task-101] Execution Failed: llama-server returned HTTP 400: {"error":{"code":400,"message":"model 'qwen_coder' not found","type":"invalid_request_error"}}
-        ^C
-        >>> [SYSTEM] Shutting down daemon, Terminating heartbeat...
-        12:14:41 PM [tsx] Previous process hasn't exited yet. Force killing...
-* *END Result* *
 Minor updates to orchestrator 
-
-test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or failed):
-- Seed a ready Task:
-        npx tsx -e "import { db } from './app/database.ts'; db.prepare(\"INSERT INTO workboard_cards (id, title, description, assignee, status) VALUES ('task-102', 'Write a hello world script', 'Create a simple python hello world script', 'noid', 'ready')\").run();"
-    npm run dev
-* *Result* *
-    Jeremys-MacBook-Pro: ~/axxanoid_harnes % npm run dev
-
-        > axxanoid_harnes@1.0.0 dev
-        > tsx watch app/main.ts
-
-        >>> [DATABASE] Shared SQLite Workboard schema initialized in WAL mode.
-        >>> Booting Axxanoid Harness ....
-        >>> API Listening on http://127.0.0.1:8000
-        >>> [SYSTEM] Initializing startup heartbeat...
-        >>> [HEARTBEAT] Wake sequence initiated. Ingesting core directives into RAM...
-        >>> [HEARTBEAT WARNING] Missing directive file: SOUL.md. Skipping.
-        >>> [HEARTBEAT WARNING] Missing directive file: IDENTITY.md. Skipping.
-        >>> [HEARTBEAT WARNING] Missing directive file: HUMAN.md. Skipping.
-        >>> [HEARTBEAT WARNING] Missing directive file: HEARTBEAT.md. Skipping.
-        >>> [HEARTBEAT] Executing dynamic audits from HEARTBEAT.md...
-        >>> [HEARTBEAT] Audit complete. Ready for Engine Inference.
-        >>> [SYSTEM] Initializing background heartbeat (15m pulse)...
-        >>> [SYSTEM] Initializing Workboard Orchestrator (5s pulse)...
-        >>> [ORCHESTRATOR] Found 1 READY task(s) on Workboard.
-            -> [CARD task-102] Assigned to: NOID | Title: "Write a hello world script"
-        >>> [ORCHESTRATOR] Processing Task [task-102] with Assignee [NOID]
-        >>> [ORCHESTRATOR] Task [task-102] Execution Failed: formatPromptForModel is not defined
-        ^C
-        >>> [SYSTEM] Shutting down daemon, Terminating heartbeat...
-        12:43:30 PM [tsx] Previous process hasn't exited yet. Force killing...
-* *END Result* *
 Minor updates to orchestrator Again
-
-test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or failed):
-- Seed a ready Task:
-        npx tsx -e "import { db } from './app/database.ts'; db.prepare(\"INSERT INTO workboard_cards (id, title, description, assignee, status) VALUES ('task-103', 'Write a hello world script', 'Create a simple python hello world script', 'noid', 'ready')\").run();"
-    npm run dev
-* *Result* *
-    Jeremys-MacBook-Pro: ~/axxanoid_harnes % npm run dev
-
-        > axxanoid_harnes@1.0.0 dev
-        > tsx watch app/main.ts
-
-        >>> [DATABASE] Shared SQLite Workboard schema initialized in WAL mode.
-        >>> Booting Axxanoid Harness ....
-        >>> API Listening on http://127.0.0.1:8000
-        >>> [SYSTEM] Initializing startup heartbeat...
-        >>> [HEARTBEAT] Wake sequence initiated. Ingesting core directives into RAM...
-        >>> [HEARTBEAT WARNING] Missing directive file: SOUL.md. Skipping.
-        >>> [HEARTBEAT WARNING] Missing directive file: IDENTITY.md. Skipping.
-        >>> [HEARTBEAT WARNING] Missing directive file: HUMAN.md. Skipping.
-        >>> [HEARTBEAT WARNING] Missing directive file: HEARTBEAT.md. Skipping.
-        >>> [HEARTBEAT] Executing dynamic audits from HEARTBEAT.md...
-        >>> [HEARTBEAT] Audit complete. Ready for Engine Inference.
-        >>> [SYSTEM] Initializing background heartbeat (15m pulse)...
-        >>> [SYSTEM] Initializing Workboard Orchestrator (5s pulse)...
-        >>> [ORCHESTRATOR] Found 1 READY task(s) on Workboard.
-            -> [CARD task-103] Assigned to: NOID | Title: "Write a hello world script"
-        >>> [ORCHESTRATOR] Processing Task [task-103] with Assignee [NOID]
-        >>> [ENGINE CLIENT ERROR] Failed to communicate with llama-server: llama-server returned HTTP 500: {"error":{"code":500,"message":"model name=qwen2.5-coder-14b-instruct failed to load","type":"server_error"}}
-        >>> [ORCHESTRATOR] Task [task-103] Execution Failed: llama-server returned HTTP 500: {"error":{"code":500,"message":"model name=qwen2.5-coder-14b-instruct failed to load","type":"server_error"}}
-        ^C
-        >>> [SYSTEM] Shutting down daemon, Terminating heartbeat...
-        2:41:50 PM [tsx] Previous process hasn't exited yet. Force killing...
-    ---
-    llama result:
-    [50534] 0.00.053.440 E llama_model_load_from_file_impl: failed to load model
-    [50534] 0.00.053.441 E cmn  common_init_: failed to load model './models/qwen2.5-coder-14b-instruct-q4_k_m.gguf'
-    [50534] 0.00.053.441 E srv    load_model: failed to load model, './models/qwen2.5-coder-14b-instruct-q4_k_m.gguf'
-    [50534] 0.00.053.442 I srv    operator(): operator(): cleaning up before exit...
-    [50534] 0.00.053.641 E srv  llama_server: exiting due to model loading error
-    153.27.331.039 I srv    operator(): instance name=qwen2.5-coder-14b-instruct exited with status 1
-    153.27.331.179 W srv    operator(): got exception: {"error":{"code":500,"message":"model name=qwen2.5-coder-14b-instruct failed to load","type":"server_error"}}
-
-* *END Result* *
 cd "$(dirname "$0")" -- added to start engin
-
 test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or failed):
 - Seed a ready Task:
         npx tsx -e "import { db } from './app/database.ts'; db.prepare(\"INSERT INTO workboard_cards (id, title, description, assignee, status) VALUES ('task-104', 'Write a hello world script', 'Create a simple python hello world script', 'noid', 'ready')\").run();"
@@ -622,7 +516,6 @@ test a full task lifecycle (ready -> in_progress -> LLM Inference -> done or fai
             '```'
         }
 * *END Result* *
-
 * Step 7:* Strict Execution & Self-Healing Verification Gate
     *OS Tool Execution: Intercept `tool_call` actions and dispatch directly to physical OS primitives in `tools/executor.ts`.*
     *Verified Closed-Loop Orchestrator (app/orchestrator.ts)*
@@ -668,8 +561,6 @@ npx tsx -e "import { db } from './app/database.ts'; db.prepare(\"INSERT INTO wor
     tools/hello_world.py created:
     print("Hello from Axxanoid")
 * *END Result* *
-
-
 STOP ALL and REFACTOR -----
 * Step 8:* Standardized 3-File Agent Model (AXXANOID_HARNES/agents/{agent}/)
 contracts renamed to config, permission cahnged to allowed_tools and allowed_skills
@@ -714,6 +605,11 @@ removed routing from
 * Step 13: JIT Tool Routing & Permission Scoping
     * The Refactor (app/orchestrator.ts)
 * Step 11: Master developer override file allowing toggles ("enabled": false) on any tool or skill by ID
+    * Create configs/system_control.json
+* Step 12: Diagnostic Boot Audit:
+    * Refactor tools/index.ts
+    * Refactor skills/index.ts
+* Step 14: Standardized Logging: Stream `stdout`/`stderr` and process exit codes back to `workboard_cards.result_payload`.
 
 --- living ---
 
@@ -732,7 +628,9 @@ removed routing from
 - Multi-Tiered Skill Engine 
 - 5-agent workforce within three-file specification
 - JIT Tool Routing & Permission Scoping
-- Active focus: tep 11: Master developer override file allowing toggles ("enabled": false) on any tool or skill by ID
+- Master developer override file 
+- Diagnostic Boot Audit
+- Active focus: Standardized Logging: Stream 
 
 ## To-Do List (Next Actions)
 - [X] **Step 1:** Scaffold the `AXXANOID_HARNES` physical directory structure.
@@ -748,8 +646,8 @@ removed routing from
 - [X] **Step 8:** Standardized 3-File Agent Model (config.json, IDENTITY.md, SOUL.md)
 - [X] **Step 9:** Multi-Tiered Self-Contained Tool Engine (Directory precedence & auto-discovery)
 - [X] **Step 10:** Multi-Tiered Skill Engine (Workflow templates & auto-discovery)
-- [ ] **Step 11:** System Control (system_control.json)
-- [ ] **Step 12:** Diagnostic Boot Audit: At boot, Node statically inspects all files in Tool/Skill registries.
+- [X] **Step 11:** System Control (system_control.json)
+- [X] **Step 12:** Diagnostic Boot Audit: At boot, Node statically inspects all files in Tool/Skill registries.
 - [X] **Step 13:** Method A Two-Pass JIT Tool Routing (app/orchestrator.ts refactor)
 - [ ] **Step 14:** Standardized Logging (stdout/stderr to memory.db)
 - [ ] **Step 15:** Autonomous Task Decomposition & Needs-Based Blocking
@@ -782,5 +680,6 @@ removed routing from
 - [x] Multi-Tiered Skill Engine
 - [x] 5-agent workforce within three-file specification
 - [x] JIT Tool Routing & Permission Scoping
+- [x] Diagnostic Boot Audit
 
 ### End Axxanoid Harness: Build & Refactor Tracker - Overview

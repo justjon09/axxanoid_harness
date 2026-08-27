@@ -1,0 +1,14 @@
+{
+  "tools": {
+    "write_file": true,
+    "read_file": true,
+    "list_files": true,
+    "run_terminal": true,
+    "workboard_read": true,
+    "workboard_create": true,
+    "workboard_mutate": true
+  },
+  "skills": {
+    "system_telemetry": true
+  }
+}
