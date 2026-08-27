@@ -40,6 +40,7 @@ System Controls:
   resume                    - Resume the Orchestrator loop
   toggle <tool|skill> <name> <on|off> - Enable or disable a tool/skill globally
   agent create <name> <tier>          - Scaffold a new agent directory
+  tool incorp <name>                  - Scaffold an open-source tool wrapper
     `);
     process.exit(0);
 }
@@ -179,6 +180,72 @@ switch (command) {
         fs.writeFileSync(path.join(agentDir, 'SOUL.md'), soul);
 
         console.log(`>>> [CLI] Success: Agent [${agentName.toUpperCase()}] created successfully at agents/${agentName}/`);
+        break;
+    }
+    case 'tool': {
+        const subCommand = args[1];
+        if (subCommand === 'incorp') {
+            const toolName = args[2]?.toLowerCase();
+            if (!toolName) {
+                console.log(">>> [CLI] Usage: axx tool incorp <name>");
+                process.exit(1);
+            }
+            const importedDir = path.resolve(__dirname, '../tools/imported');
+            if (!fs.existsSync(importedDir)) {
+                fs.mkdirSync(importedDir, { recursive: true });
+            }
+            const filePath = path.join(importedDir, `${toolName}.ts`);
+            if (fs.existsSync(filePath)) {
+                console.error(`>>> [CLI] Error: Imported tool '${toolName}.ts' already exists.`);
+                process.exit(1);
+            }
+            const template = `import { normalizeToolSchema } from '../../engine/translator.ts';
+
+// 1. Paste your external OpenAI or MCP JSON schema here:
+const externalSchema = {
+    "type": "function",
+    "function": {
+        "name": "${toolName}",
+        "description": "Description of the imported tool",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "example_param": { "type": "string", "description": "An example parameter" }
+            },
+            "required": ["example_param"]
+        }
+    }
+};
+
+// 2. The harness will automatically normalize this into a HarnessToolDefinition
+export const schema = normalizeToolSchema(externalSchema);
+
+// 3. Define how the tool actually executes
+export async function execute(payload: Record<string, any>) {
+    try {
+        console.log(\`Executing ${toolName} with payload:\`, payload);
+        
+        // TODO: Implement your external API call, SDK function, or local script trigger here.
+        
+        return {
+            success: true,
+            output: "Imported tool execution successful.",
+        };
+    } catch (err: any) {
+        return {
+            success: false,
+            output: '',
+            error: err.message || String(err)
+        };
+    }
+}
+`;
+
+        fs.writeFileSync(filePath, template);
+            console.log(`>>> [CLI] Success: Scaffolded imported tool at tools/imported/${toolName}.ts`);
+        } else {
+            console.log(">>> [CLI] Unknown tool subcommand. Did you mean: axx tool incorp <name>?");
+        }
         break;
     }
     default:

@@ -85,7 +85,7 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
         * `axx logs [agent]` — Stream real-time agent output and tool execution logs.
 * [X] **Step 18:** axx agent create: CLI command to generate new 3-file agent directories on demand without modifying TypeScript source code.
 * [X] **Step 19:** axx tool toggle: CLI command to update system_control.json and enable/disable system tools at runtime.
-* [ ] **Step 20:** axx tool incorp: Tooling to wrap external MCP or open-source definitions into single-file harness modules.
+* [X] **Step 20:** axx tool incorp: Tooling to wrap external MCP or open-source definitions into single-file harness modules.
 
 ---
 
@@ -693,7 +693,10 @@ removed routing from
     * extend channels/cli.ts
     *RESULTS* Perfect outcome 
 * Step 20: axx tool incorp: Tooling to wrap external MCP or open-source definitions into single-file harness modules.
-
+    * extend channels/cli.ts
+    npm run axx -- tool incorp fetch_weather
+    *RESULTS* Perfect outcome 
+* Step 21: REST & WebSocket API Routes (`api/`)
 --- living ---
 
 ### End Axxanoid Harness: Build & Refactor Tracker - detailed
@@ -716,7 +719,7 @@ removed routing from
 - Standardized Logging: Stream 
 - Autonomous Task Decomposition & Needs-Based Blocking
 - CLI Channel Interface 
-- Active focus: Step 20: axx tool incorp: Tooling to wrap external MCP or open-source definitions into single-file harness modules.
+- Active focus: Step 21: REST & WebSocket API Routes (`api/`)
 
 
 ## To-Do List (Next Actions)
@@ -742,7 +745,7 @@ removed routing from
 - [X] **Step 17:** CLI Channel Interface (channels/cli.ts)
 - [X] **Step 18:** CLI Generators (axx agent create, axx tool toggle)
 - [X] **Step 19:** CLI Generators (axx tool toggle)
-- [ ] **Step 20:** MCP / Open-Source Tool Import Automation
+- [X] **Step 20:** MCP / Open-Source Tool Import Automation
 - [ ] **Step 21:** REST & WebSocket API Routes (api/)
 - [ ] **Step 22:** Web Dashboard Frontend (channels/web/public/)
 - [ ] **Step 23:** Full System Assembly & Playbook Finalization
