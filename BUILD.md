@@ -675,6 +675,16 @@ STOP ALL and REFACTOR -----
 contracts renamed to config, permission cahnged to allowed_tools and allowed_skills
 removed routing from 
 * Step 9:* Multi-Tiered Self-Contained Tool Engine (AXXANOID_HARNES/tools/)
+    * Four subdirectories to establish the tiered hierarchy:
+        *tools/custom/* *tools/agent-built/* *tools/imported/* *tools/native/*
+    * Create tools/native/write_file.ts
+    * Create tools/native/read_file.ts
+    * Create tools/native/list_files.ts
+    * Create tools/native/run_terminal.ts
+    * Create tools/native/workboard_read.ts
+    * Create tools/native/workboard_create.ts
+    * Create tools/native/workboard_mutate.ts
+
 --- living ---
 
 ### End Axxanoid Harness: Build & Refactor Tracker - detailed
