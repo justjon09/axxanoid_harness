@@ -11,7 +11,23 @@ const __dirname = path.dirname(__filename);
 const PAUSE_FILE = path.resolve(__dirname, '../../.PAUSED');
 const CONTROL_FILE = path.resolve(__dirname, '../../configs/system_control.json');
 
+// --- HELPER: Discover Tier 1 Agent dynamically ---
+function getTier1AgentId(): string {
+    const agentsDir = path.resolve(__dirname, '../../agents');
+    if (!fs.existsSync(agentsDir)) return 'unknown';
+    
+    for (const folder of fs.readdirSync(agentsDir)) {
+        const configPath = path.join(agentsDir, folder, 'config.json');
+        if (fs.existsSync(configPath)) {
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+            if (config.tier === 1) return config.agent_id;
+        }
+    }
+    return 'unknown';
+}
+
 export const restRouter = Router();
+// --- KANBAN ROUTES ---
 
 // GET all Kanban cards
 restRouter.get('/cards', (req, res) => {
@@ -23,16 +39,39 @@ restRouter.get('/cards', (req, res) => {
     }
 });
 
-// POST UI to Kanban cards
+// POST a new manual task from the UI
 restRouter.post('/cards', (req, res) => {
     try {
         const { title, description, assignee } = req.body;
         const id = `task-${crypto.randomUUID().slice(0, 8)}`;
         
+        // If no assignee is provided via the UI, default to the Tier 1 router dynamically
+        const targetAssignee = assignee ? assignee.toLowerCase() : getTier1AgentId();
+
         db.prepare(`INSERT INTO workboard_cards (id, title, description, assignee, status) VALUES (?, ?, ?, ?, 'ready')`)
-          .run(id, title, description || 'Created via Web UI', (assignee || 'axxbot').toLowerCase());
+          .run(id, title, description || 'Created via Web UI', targetAssignee);
           
+        broadcastUpdate('board_refresh', { card_id: id });
         res.json({ success: true, id, message: 'Card added successfully' });
+    } catch (err: any) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// PUT to manually update card status via UI
+restRouter.put('/cards/:id/status', (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        
+        const result = db.prepare(`UPDATE workboard_cards SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(status.toLowerCase(), id);
+        
+        if (result.changes === 0) {
+            return res.status(404).json({ success: false, message: 'Card not found' });
+        }
+
+        broadcastUpdate('board_refresh', { card_id: id, status });
+        res.json({ success: true, message: 'Card status updated' });
     } catch (err: any) {
         res.status(500).json({ success: false, error: err.message });
     }
@@ -44,8 +83,11 @@ restRouter.post('/chat', (req, res) => {
         const { message } = req.body;
         const id = `task-${crypto.randomUUID().slice(0, 8)}`;
         
-        // Find tier 1 agent (AxxBot)
-        const tier1Agent = 'axxbot'; // TO-DO We will dynamically resolve this in the UI logic later
+        // Find tier 1 agent
+        const tier1Agent = getTier1AgentId();
+        if (tier1Agent === 'unknown') {
+             return res.status(400).json({ success: false, error: "No Tier 1 Agent found in configurations." });
+        }
         
         db.prepare(`INSERT INTO workboard_cards (id, title, description, assignee, status) VALUES (?, ?, ?, ?, 'ready')`)
           .run(id, message, 'CEO Directive via Command Center', tier1Agent);

@@ -704,14 +704,21 @@ removed routing from
     * Wire Everything into app/main.ts -- Mount the API routes
 *  Step 22: Web Dashboard Frontend (`channels/web/public/`)
     * Upgrade the API Routes (api/router.ts)
-        *// Find tier 1 agent (AxxBot)        const tier1Agent = 'axxbot'; // TO-DO We will dynamically resolve this in the UI logic later*
-        *// POST UI to Kanban cards  restRouter.post('/cards', (req, res) => { ?????*
+        * Find tier 1 agent (AxxBot)        const tier1Agent = 'axxbot'; // TO-DO We will dynamically resolve this in the UI logic later
+            * // --- HELPER: Discover Tier 1 Agent dynamically ---
+            * const tier1Agent = getTier1AgentId();
+        * POST / PUT / GET, UI to Kanban cards
+            * The Dynamic API Router (api/router.ts)
+                * restRouter.get('/cards'
+                * restRouter.post('/cards'
+                * restRouter.put('/cards/:id/status'
     * Upgrade the WebSocket Broadcaster (channels/web/ws-server.ts)
     * Telemetry Wiring (app/orchestrator.ts)
     * The multi-pane Command Center
         * The Structure (channels/web/public/index.html)
         * The Style (channels/web/public/assets/style.css)
         * The Logic (channels/web/public/assets/app.js)
+    * Verify
 
 --- living ---
 
@@ -736,7 +743,8 @@ removed routing from
 - Autonomous Task Decomposition & Needs-Based Blocking
 - CLI Channel Interface
 - REST & WebSocket API Routes
-- Active focus: Step 22: Web Dashboard Frontend (`channels/web/public/`)
+- Web Dashboard Frontend
+- Active focus: Step 22: Web Dashboard Frontend
 
 
 ## To-Do List (Next Actions)
@@ -764,7 +772,7 @@ removed routing from
 - [X] **Step 19:** CLI Generators (axx tool toggle)
 - [X] **Step 20:** MCP / Open-Source Tool Import Automation
 - [X] **Step 21:** REST & WebSocket API Routes (api/)
-- [ ] **Step 22:** Web Dashboard Frontend (channels/web/public/)
+- [X] **Step 22:** Web Dashboard Frontend (channels/web/public/)
 - [ ] **Step 23:** Full System Assembly & Playbook Finalization
 
 
@@ -792,5 +800,6 @@ removed routing from
 - [x] Autonomous Task Decomposition & Needs-Based Blocking
 - [x] CLI Channel Interface
 - [x] REST & WebSocket API Routes
+- [x] Web Dashboard Frontend
 
 ### End Axxanoid Harness: Build & Refactor Tracker - Overview
