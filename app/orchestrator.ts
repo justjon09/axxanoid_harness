@@ -1,18 +1,35 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { db } from './database.ts';
 import { sendLlamaCompletion, ChatMessage } from '../engine/llama-client.ts';
 import { formatPromptForModel, parseAgentAction, HarnessToolDefinition } from '../engine/translator.ts';
-import { SYSTEM_TOOLS, executeTool, ToolResult } from '../tools/index.ts';
+import { ToolRegistry, executeTool, ToolResult } from '../tools/index.ts';
+import { SkillRegistry } from '../skills/index.ts';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export interface WorkboardCard {
     id: string;
     title: string;
     description: string | null;
-    assignee: string; // 'noid' | 'execubot' | 'dobot' | 'pubbot' | 'axxbot'
+    assignee: string;
     status: 'ready' | 'in_progress' | 'blocked' | 'done' | 'failed';
     parent_id: string | null;
     result_payload: string | null;
     created_at: string;
     updated_at: string;
+}
+
+// --- HELPER: Wildcard Permission Matcher ---
+function isAllowed(name: string, allowedList: string[]): boolean {
+    return allowedList.some(pattern => {
+        if (pattern.endsWith('*')) {
+            return name.startsWith(pattern.slice(0, -1));
+        }
+        return name === pattern;
+    });
 }
 
 /**
@@ -21,10 +38,7 @@ export interface WorkboardCard {
  */
 export async function resolveDependencies() {
     // Find all 'blocked' cards
-    const blockedCards = db.prepare(`
-        SELECT * FROM workboard_cards WHERE status = 'blocked'
-    `).all() as WorkboardCard[];
-
+    const blockedCards = db.prepare(`SELECT * FROM workboard_cards WHERE status = 'blocked'`).all() as WorkboardCard[];
     for (const card of blockedCards) {
         // Check if there are any incomplete dependencies for this card
         const unresolvedDep = db.prepare(`
@@ -42,6 +56,7 @@ export async function resolveDependencies() {
                 SET status = 'ready', updated_at = CURRENT_TIMESTAMP 
                 WHERE id = ?
             `).run(card.id);
+            
             console.log(`>>> [ORCHESTRATOR] Unblocked card "${card.title}" (${card.id}) -> Promoted to READY`);
         }
     }
@@ -62,31 +77,59 @@ export function getReadyTasks(): WorkboardCard[] {
  * Moves task to 'in_prgress', envokes model, ingest result and update tak accordingly. 
  */
 export async function processTask(task: WorkboardCard) {
-    // 1. Mark task in_progress
+    // Mark task in_progress
     db.prepare(`
         UPDATE workboard_cards 
         SET status = 'in_progress', updated_at = CURRENT_TIMESTAMP 
         WHERE id = ?
     `).run(task.id);
-
     console.log(`>>> [ORCHESTRATOR] Processing Task [${task.id}] with Assignee [${task.assignee.toUpperCase()}]`);
 
     const isWorker = ['noid', 'execubot', 'dobot'].includes(task.assignee.toLowerCase());
-    // 1. Select model based on agent tier        
+    // Select model based on agent tier        
     // Map assignee to exact model alias registered in models.ini
-    const modelAlias = task.assignee === 'axxbot' 
-        ? 'llama-3-groq-8b-tool-use' 
-        : 'qwen2.5-coder-14b-instruct';
-
+    const modelAlias = task.assignee === 'axxbot' ? 'llama-3-groq-8b-tool-use' : 'qwen2.5-coder-14b-instruct';
     // Map assignee to internal translator prompt formatter
-    const promptFormat = task.assignee === 'axxbot' 
-        ? 'llama3_groq' 
-        : 'qwen_coder';
+    const promptFormat = task.assignee === 'axxbot' ? 'llama3_groq' : 'qwen_coder';
+    // JIT ROUTING & PERMISSION SCOPING
+    const agentDir = path.resolve(__dirname, `../agents/${task.assignee.toLowerCase()}`);
+    const configPath = path.join(agentDir, 'config.json');
+    const soulPath = path.join(agentDir, 'SOUL.md');
+
+    let allowedToolsList: string[] = [];
+    let allowedSkillsList: string[] = [];
+    let agentSoul = '';
+
+    if (fs.existsSync(configPath)) {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        allowedToolsList = config.allowed_tools || [];
+        allowedSkillsList = config.allowed_skills || [];
+    }
+
+    if (fs.existsSync(soulPath)) {
+        agentSoul = fs.readFileSync(soulPath, 'utf-8');
+    }
+
+    // Filter ToolRegistry down to only what this agent is allowed to use
+    const activeTools: HarnessToolDefinition[] = [];
+    for (const [toolName, toolData] of ToolRegistry.entries()) {
+        if (isAllowed(toolName, allowedToolsList)) {
+            activeTools.push(toolData.schema);
+        }
+    }
+
+    // Filter SkillRegistry and compile playbook context
+    let skillContext = '';
+    for (const [skillId, skillData] of SkillRegistry.entries()) {
+        if (isAllowed(skillId, allowedSkillsList)) {
+            skillContext += `\n\n${skillData.content}`;
+        }
+    }
     
     const conversationHistory: ChatMessage[] = [
         {
             role: 'system',
-            content: `You are ${task.assignee.toUpperCase()}, an execution worker in Axxanoid OS. You MUST issue an actionable JSON tool_call to perform work. Do NOT respond with plain conversational prose or explanations.`
+            content: `${agentSoul}\n\nYou MUST issue an actionable JSON tool_call to perform work. Do NOT respond with plain conversational prose or explanations.${skillContext}`
         },
         {
             role: 'user',
@@ -104,21 +147,19 @@ export async function processTask(task: WorkboardCard) {
         console.log(`>>> [ORCHESTRATOR] Task [${task.id}] Execution Attempt ${attempts}/${maxAttempts}`);
 
         try {
-            // Format message include SYSTEM_TOOLS
-            const formattedMessages = formatPromptForModel(conversationHistory, SYSTEM_TOOLS, promptFormat);
+            // Format message include ONLY the activeTools to the LLM
+            const formattedMessages = formatPromptForModel(conversationHistory, activeTools, promptFormat);
             // Dispatch to Local Engine
             const completion = await sendLlamaCompletion(formattedMessages, { model: modelAlias });
-            // 3. Intercept & Parse Action
+            // Intercept & Parse Action
             const action = parseAgentAction(completion.content);
 
             // PROSE REJECTION: Worker agents MUST invoke tools, not chat
             if (isWorker && action.type === 'user_message') {
                 console.warn(`>>> [PROSE REJECTED] Worker [${task.assignee.toUpperCase()}] returned prose instead of a tool call.`);
-                
-                conversationHistory.push({
-                    role: 'assistant',
-                    content: completion.content
-                });
+
+                conversationHistory.push({ role: 'assistant', content: completion.content });
+
                 conversationHistory.push({
                     role: 'user',
                     content: 'ERROR: Conversational responses are rejected. You must output a JSON tool_call payload (e.g. write_file or run_terminal) to perform physical work on the OS.'
@@ -133,6 +174,14 @@ export async function processTask(task: WorkboardCard) {
 
             // OS TOOL EXECUTION GATE
             if (action.type === 'tool_call' && action.target) {
+                // Double check permissions at the execution gate
+                if (!isAllowed(action.target, allowedToolsList)) {
+                    console.warn(`>>> [SECURITY BLOCK] ${task.assignee.toUpperCase()} attempted to use unauthorized tool: ${action.target}`);
+                    conversationHistory.push({ role: 'assistant', content: completion.content });
+                    conversationHistory.push({ role: 'user', content: `ERROR: You do not have permission to use the tool '${action.target}'. Review your constraints.` });
+                    continue;
+                }
+
                 console.log(`>>> [EXECUTION] Intercepted Tool [${action.target}]. Executing on OS...`);
                 const executionResult: ToolResult = await executeTool(action.target, action.payload);
 
@@ -167,7 +216,7 @@ export async function processTask(task: WorkboardCard) {
         }
     }
 
-    // 4. Update task
+    // Update task
     const finalStatus = taskCompleted ? 'done' : 'failed';
     db.prepare(
         `
@@ -185,10 +234,9 @@ export async function processTask(task: WorkboardCard) {
  */
 export async function runOrchestratorPulse() {
     try {
-        // Step 1: Auto-unblock child cards whose parent dependencies completed
+        // Auto-unblock child cards whose parent dependencies completed
         await resolveDependencies();
-
-        // Step 2: Fetch unblocked tasks ready for execution
+        // Fetch unblocked tasks ready for execution
         const readyTasks = getReadyTasks();
 
         if (readyTasks.length > 0) {

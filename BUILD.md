@@ -52,7 +52,7 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 ### Phase 4: System Control, Diagnostic Auditing & JIT Routing
 * [ ] **Step 11:** system_control.json: Master developer override file allowing toggles ("enabled": false) on any tool or skill by ID to disable buggy dependencies system-wide.
 * [ ] **Step 12:** Diagnostic Boot Audit: At boot, Node statically inspects all files in Tool/Skill registries. If a schema is invalid or exports are missing, Node outputs a detailed `[BOOT VERIFICATION FAILED]` terminal block (file path, error type, line number) and holds the orchestrator loop in a `PAUSED` state for live developer repair. Prevents LLMs from attempting unverified tool calls.
-* [ ] **Step 13:** Method A Two-Pass JIT Tool Routing (`app/orchestrator.ts`):
+* [X] **Step 13:** Method A Two-Pass JIT Tool Routing (`app/orchestrator.ts`):
     * Pass 1: Inject a lightweight 1-line text menu (Name + Summary) into the system prompt based on `config.json` wildcard permissions.
     * Pass 2: Intercept LLM's requested tools, hydrate only those specific full JSON parameter schemas into the prompt, and execute to prevent context-window bloat.
 * [ ] **Step 14:** Standardized Logging: Stream `stdout`/`stderr` and process exit codes back to `workboard_cards.result_payload`.
@@ -711,6 +711,9 @@ removed routing from
     * Create the file agents/pubbot/config.json
     * Create the file agents/pubbot/IDENTITY.md
     * Create the file agents/pubbot/SOUL.md
+* Step 13: JIT Tool Routing & Permission Scoping
+    * The Refactor (app/orchestrator.ts)
+* Step 11: Master developer override file allowing toggles ("enabled": false) on any tool or skill by ID
 
 --- living ---
 
@@ -728,7 +731,8 @@ removed routing from
 - Multi-Tiered Self-Contained Tool Engine 
 - Multi-Tiered Skill Engine 
 - 5-agent workforce within three-file specification
-- Active focus: Step 10: Multi-Tiered skills Engine 
+- JIT Tool Routing & Permission Scoping
+- Active focus: tep 11: Master developer override file allowing toggles ("enabled": false) on any tool or skill by ID
 
 ## To-Do List (Next Actions)
 - [X] **Step 1:** Scaffold the `AXXANOID_HARNES` physical directory structure.
@@ -744,9 +748,9 @@ removed routing from
 - [X] **Step 8:** Standardized 3-File Agent Model (config.json, IDENTITY.md, SOUL.md)
 - [X] **Step 9:** Multi-Tiered Self-Contained Tool Engine (Directory precedence & auto-discovery)
 - [X] **Step 10:** Multi-Tiered Skill Engine (Workflow templates & auto-discovery)
-- [ ] **Step 11:** System Control & Diagnostic Boot Audit (system_control.json & static file inspection)
-* [ ] **Step 12:** Diagnostic Boot Audit: At boot, Node statically inspects all files in Tool/Skill registries.
-- [ ] **Step 13:** Method A Two-Pass JIT Tool Routing (app/orchestrator.ts refactor)
+- [ ] **Step 11:** System Control (system_control.json)
+- [ ] **Step 12:** Diagnostic Boot Audit: At boot, Node statically inspects all files in Tool/Skill registries.
+- [X] **Step 13:** Method A Two-Pass JIT Tool Routing (app/orchestrator.ts refactor)
 - [ ] **Step 14:** Standardized Logging (stdout/stderr to memory.db)
 - [ ] **Step 15:** Autonomous Task Decomposition & Needs-Based Blocking
 - [X] **Step 16:** Full Agent Roster Standardization (AxxBot, Noid, ExecuBot, DoBot, PubBot)
@@ -777,5 +781,6 @@ removed routing from
 - [x] Multi-Tiered Self-Contained Tool Engine
 - [x] Multi-Tiered Skill Engine
 - [x] 5-agent workforce within three-file specification
+- [x] JIT Tool Routing & Permission Scoping
 
 ### End Axxanoid Harness: Build & Refactor Tracker - Overview
