@@ -90,7 +90,7 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 ---
 
 ### Phase 7: Web UI, Dashboard & Cron Controls
-* [ ] **Step 21:** REST & WebSocket API Routes (`api/`)
+* [X] **Step 21:** REST & WebSocket API Routes (`api/`)
     * Kanban board CRUD endpoints (`GET/POST /api/cards`, `PUT /api/cards/:id/status`).
     * Real-time WebSocket event broadcaster (`channels/web/ws-server.ts`) to push card updates, needs-triage alerts, and agent thought logs to the browser.
 * [ ] **Step 22:** Web Dashboard Frontend (`channels/web/public/`)
@@ -697,6 +697,12 @@ removed routing from
     npm run axx -- tool incorp fetch_weather
     *RESULTS* Perfect outcome 
 * Step 21: REST & WebSocket API Routes (`api/`)
+    npm install ws
+    npm install --save-dev @types/ws
+    * Create api/router.ts
+    * Build the WebSocket Broadcaster (channels/web/ws-server.ts)
+    * Wire Everything into app/main.ts -- Mount the API routes
+
 --- living ---
 
 ### End Axxanoid Harness: Build & Refactor Tracker - detailed

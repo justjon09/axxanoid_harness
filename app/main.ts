@@ -3,8 +3,11 @@ import cors from 'cors';
 import { runHeartbeat } from './daemon-control.ts';
 import { initWorkboardSchema } from './database.ts';
 import { runOrchestratorPulse } from './orchestrator.ts';
-import { initializeToolEngine } from '../tools/index.ts';
+import { restRouter } from '../api/router.ts';
+import { initWebSocketServer } from '../channels/web/ws-server.ts';
 import { initializeSkillEngine } from '../skills/index.ts';
+import { initializeToolEngine } from '../tools/index.ts';
+
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -19,8 +22,8 @@ app.use(cors({
 
 app.use(express.json());
 
-// Mount the API routes (We will port rest_router later)
-// app.use('/api', restRouter);
+// Mount the API routes
+app.use('/api', restRouter);
 
 app.get('/', (req, res) => {
     res.json({ message: "Axxanoid OS Daemon available" });
@@ -57,6 +60,8 @@ async function bootHarness() {
         const server = app.listen(PORT, () => {
             console.log(`>>> Booting Axxanoid Harness ....`);
             console.log(`>>> API Listening on http://127.0.0.1:${PORT}`);
+            // Initialize WebSockets
+            initWebSocketServer(server);
             console.log(">>> [SYSTEM] Initializing startup heartbeat...");
             runHeartbeat();
             startBackgroundLoops();
