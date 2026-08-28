@@ -229,6 +229,8 @@ RAG (Retrieval-Augmented Generation) is exactly how we break this hardware limit
 
 Because Axxanoid is a strict 100% offline, zero-cost OS, we cannot rely on external APIs like OpenAI embeddings or Pinecone. We have to build this locally.
 ---
+ChromaDB should be reserved for Semantic Memory and Long-Term Reference Knowledge, while SQLite handles Transactional Task State.
+---
 ### END Axxanoid Harness: Build concepts and discoveries
 
 ### Axxanoid Harness: Build & Refactor Tracker
@@ -807,6 +809,22 @@ looking for an html snippet to display the words "NOT-FACE" full screen to be us
 
     Step 4: Create the TS Tools & Skills
     We wrap that Python script in our standard TS tool definitions (rag_search.ts and rag_ingest.ts) and create a new skill playbook (skills/native/rag_workflow.md) so the agents know exactly how to use it.
+    --------------------------------------
+    1. The 3-Tiered Memory Architecture
+    Your idea to split SQLite and ChromaDB by date resolves the context limits beautifully. It creates three distinct memory zones:
+    Working Memory (The LLM Prompt): The last 15 messages. This keeps the prompt lightning fast and safely under the -c 8192 VRAM limit.
+    Short-Term Memory (SQLite): All chat history from Today and Yesterday. If AxxBot needs to recall something from earlier today that aged out of the 15-message prompt, it uses the existing chat_search tool to run an exact keyword SQL query.
+    Long-Term Semantic Memory (ChromaDB): Everything older than yesterday. A nightly cron job (or CLI command) grabs yesterday's SQLite chat history, summarizes/chunks it by date (e.g., "August 27th: Discussed Shopify Scraper architecture..."), injects it into ChromaDB, and purges it from SQLite to keep the database light. AxxBot uses rag_search to find it.
+
+    2. The File-as-Truth RAG Model (configs/knowledge/)
+    Setting up configs/knowledge/ for static markdown files (CEO profile, asset directory, company rules) is the perfect companion to your agent SOUL and IDENTITY files.
+    Because we are treating these physical files as the master records, we never have to worry about updating a database manually. If you hire a new agent, tweak AxxBot's boundaries, or update your company mission, you just edit the markdown file in your IDE.
+
+    3. The Rebuild CLI (axx memory rebuild)
+    This is the exact mechanism needed to keep the vector index fresh. We can build a dedicated CLI suite that flushes and rebuilds specific RAG collections on demand.
+    axx memory rebuild souls: Drops the agent_profiles vector collection. Scans agents/*/SOUL.md and IDENTITY.md, and re-embeds them so AxxBot knows exactly who is on the roster right now.
+    axx memory rebuild knowledge: Drops the company_assets collection. Scans configs/knowledge/*.md and re-embeds your CEO profile, rules, and assets.
+    axx memory rebuild archive: Manually triggers the archiving of older SQLite chats into the ChromaDB chat_archive collection.
 ### Phase 8: END RAG Architecture PLAN
 * Step 24: The Vector Store (axx_env + ChromaDB)
     * ./axx_env/bin/pip install chromadb requests
