@@ -104,7 +104,7 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 * [X] **Step 23:** The Embedding Engine (llama-server)
     * Download an embedding model
         llama-server has a built-in /v1/embeddings endpoint -  download an embedding model (like nomic-embed-text-v1.5-GGUF), add it to models.ini, and the engine handles the vector math instantly on the GPU.
-* [ ] **Step 24:** The Vector Store (axx_env + ChromaDB)
+* [X] **Step 24:** The Vector Store (axx_env + ChromaDB)
     * Install chromadb directly into axx_env
         It will store the embeddings in a local folder (e.g., AXXANOID_HARNES/memory/vector_db/).
 * [ ] **Step 25:** The Tool Bridge (tools/native/)
@@ -114,16 +114,16 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 ---
 
 ### Phase 8: Validation & End-to-End Factory Verification
-* [ ] **Step 23:** Full System Assembly & Playbook Finalization
+* [ ] **Step 26:** Full System Assembly & Playbook Finalization
     * Multi-agent dependency chain test (AxxBot creates card -> Noid writes code -> ExecuBot executes -> AxxBot reports final output).
     * Lifecycle Integration Testing: Verify task flow from CLI input -> AxxBot decomposition -> Worker tool execution -> Card completion.
     * Path-to-Success Validation: Test hardware/out-of-scope requests to ensure zero impossibility rejections and proper blocked-state rerequisite card generation.
     * Self-Healing Loop Verification: Ensure non-zero exit codes from execute() trigger automatic retry and self-correction loops.
     * Verify zero-cost, 100% offline execution on Apple Silicon Metal.
     * Update `END-TO-END.md` and `README.md` with final production commands.
-* [ ] **Step 24:** tool / skills audit 
-* [ ] **Step 25:** Refactor Heartbeat
-* [ ] **Step 26:** Create use instructions (how to add tool / skill / agent, cli commands)
+* [ ] **Step 27:** tool / skills audit 
+* [ ] **Step 28:** Refactor Heartbeat
+* [ ] **Step 29:** Create use instructions (how to add tool / skill / agent, cli commands)
 
 ## END Axxanoid Harness: Master Build Outline
 
@@ -727,7 +727,7 @@ removed routing from
     * Create api/router.ts
     * Build the WebSocket Broadcaster (channels/web/ws-server.ts)
     * Wire Everything into app/main.ts -- Mount the API routes
-*  Step 22: Web Dashboard Frontend (`channels/web/public/`)
+* Step 22: Web Dashboard Frontend (`channels/web/public/`)
     * Upgrade the API Routes (api/router.ts)
         * Find tier 1 agent (AxxBot)        const tier1Agent = 'axxbot'; // TO-DO We will dynamically resolve this in the UI logic later
             * // --- HELPER: Discover Tier 1 Agent dynamically ---
@@ -790,8 +790,8 @@ looking for an html snippet to display the words "NOT-FACE" full screen to be us
 
 
 
---- PAUSED UI?WORKBORD FOR RAG SETUP ---
-### Phase 8: RAG Architecture
+--- PAUSED UI & WORKBORD FOR RAG SETUP ---
+### Phase 8: RAG Architecture PLAN
     The Implementation Plan
     If you want to pivot and build this immediately, here is our exact sequence:
 
@@ -807,8 +807,18 @@ looking for an html snippet to display the words "NOT-FACE" full screen to be us
 
     Step 4: Create the TS Tools & Skills
     We wrap that Python script in our standard TS tool definitions (rag_search.ts and rag_ingest.ts) and create a new skill playbook (skills/native/rag_workflow.md) so the agents know exactly how to use it.
-
-
+### Phase 8: END RAG Architecture PLAN
+* Step 24: The Vector Store (axx_env + ChromaDB)
+    * ./axx_env/bin/pip install chromadb requests
+* Step 23: The Embedding Engine (llama-server)
+    * hf download nomic-ai/nomic-embed-text-v1.5-GGUF nomic-embed-text-v1.5.Q4_K_M.gguf --local-dir engine/models
+        *path: /Users/justjon09/axxanoid_harnes/engine/models/nomic-embed-text-v1.5.Q4_K_M.gguf*
+    * Update the Engine Configuration
+        * engine/models.ini - append the new model
+        * engine/start-engine.sh - add the --embedding flag for llama.cpp
+        * engine/start-engine.sh - add -c 8192 \
+            *By capping it at 8,192, we enforce a strict 2.6 GB ceiling on the KV cache. It is mathematically impossible for the models to crash your machine.*
+* Step 25: The Tool Bridge (tools/native/)
 
 --- living ---
 
@@ -834,7 +844,7 @@ looking for an html snippet to display the words "NOT-FACE" full screen to be us
 - CLI Channel Interface
 - REST & WebSocket API Routes
 - Web Dashboard Frontend
-- Active focus: Step 22: Web Dashboard Frontend
+- Active focus: Step 25: The Tool Bridge (tools/native/)
 
 
 ## To-Do List (Next Actions)
@@ -863,7 +873,13 @@ looking for an html snippet to display the words "NOT-FACE" full screen to be us
 - [X] **Step 20:** MCP / Open-Source Tool Import Automation
 - [X] **Step 21:** REST & WebSocket API Routes (api/)
 - [X] **Step 22:** Web Dashboard Frontend (channels/web/public/)
-- [ ] **Step 23:** Full System Assembly & Playbook Finalization
+- [X] **Step 23:** The Embedding Engine (llama-server)
+- [X] **Step 24:** The Vector Store (axx_env + ChromaDB)
+- [ ] **Step 25:** The Tool Bridge (tools/native/)
+- [ ] **Step 26:** Full System Assembly & Playbook Finalization
+- [ ] **Step 27:** tool / skills audit 
+- [ ] **Step 28:** Refactor Heartbeat
+- [ ] **Step 29:** Create use instructions (how to add tool / skill / agent, cli commands)
 
 
 ## Completed Log

@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==========================================
 # Llama.cpp Engine Startup Configuration
-# Models: Llama 3 Groq 8B (Head) + Qwen 2.5 Coder 14B (Hands)
+# Models: Llama 3 Groq 8B (Head) + Qwen 2.5 Coder 14B (Hands) + Nomic (Embeddings)
 # Engine: Apple Silicon Metal / 8-bit Quantized Cache
 # ==========================================
 
@@ -15,6 +15,8 @@ llama-server \
   --port 8080 \
   -np 2 \
   -fa 1 \
+  -c 8192 \
+  --embedding \
   --jinja \
   --cache-type-k q8_0 \
   --cache-type-v q8_0
