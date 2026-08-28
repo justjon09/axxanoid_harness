@@ -6,7 +6,9 @@
   "allowed_tools": [
     "workboard_*",
     "read_file",
-    "chat_search"
+    "chat_search",
+    "rag_search",
+    "rag_ingest"
   ],
   "allowed_skills": [
     "triage_*",

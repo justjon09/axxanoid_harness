@@ -7,7 +7,9 @@
     "workboard_read": true,
     "workboard_create": true,
     "workboard_mutate": true,
-    "chat_search": true
+    "chat_search": true,
+    "rag_search": true,
+    "rag_ingest": true
   },
   "skills": {
     "system_telemetry": true,

@@ -837,6 +837,12 @@ looking for an html snippet to display the words "NOT-FACE" full screen to be us
         * engine/start-engine.sh - add -c 8192 \
             *By capping it at 8,192, we enforce a strict 2.6 GB ceiling on the KV cache. It is mathematically impossible for the models to crash your machine.*
 * Step 25: The Tool Bridge (tools/native/)
+    * The Python Vector Bridge (tools/rag_bridge.py)
+    * The Ingest Wrapper (tools/native/rag_ingest.ts)
+    * The Search Wrapper (tools/native/rag_search.ts)
+    * Enable Tools & Create System Folders
+        * configs/system_control.json
+        * agents/axxbot/config.json
 
 --- living ---
 
