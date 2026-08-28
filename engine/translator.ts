@@ -177,6 +177,19 @@ export function parseAgentAction(rawCompletion: string): AgentAction {
         }
     }
 
+    // JSON Regex (No markdown, mixed with prose)
+    const nakedJsonMatch = trimmed.match(/\{[\s\S]*"name"\s*:\s*"[^"]+"[\s\S]*"parameters"\s*:[\s\S]*\}/);
+    if (nakedJsonMatch) {
+        try {
+            const parsed = JSON.parse(nakedJsonMatch[0]);
+            if (parsed.name && parsed.parameters) {
+                return { type: 'tool_call', target: parsed.name, payload: parsed.parameters, raw_response: rawCompletion };
+            }
+        } catch {
+            // Fall through
+        }
+    }
+
     // Unstructured Fallback
     return {
         type: 'user_message',

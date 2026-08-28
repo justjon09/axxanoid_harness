@@ -155,11 +155,19 @@ restRouter.post('/chat', async (req, res) => {
         const systemInstruction = "You are the Chief of Staff interacting directly with the CEO. If the CEO gives a directive that requires system action, you MUST use the appropriate tool (like workboard_create) to delegate the work. ONLY CALL ONE TOOL PER RESPONSE. Do not attempt to read files and create cards at the same time. If the CEO asks a question or makes a conversational statement, reply directly using natural language.";
 
         // Fetch the last 15 messages for context
-        const pastMessages = db.prepare(`
+        const pastMessagesRaw = db.prepare(`
             SELECT role, content FROM (
                 SELECT id, role, content FROM chat_history ORDER BY id DESC LIMIT 15
             ) ORDER BY id ASC
-        `).all() as { role: 'user' | 'assistant', content: string }[];
+        `).all() as { role: string, content: string }[];
+
+        // Map system notifications to user role so the LLM doesn't adopt them as its own voice
+        const pastMessages: ChatMessage[] = pastMessagesRaw.map(msg => {
+            if (msg.role === 'system') {
+                return { role: 'user', content: `[SYSTEM WORKBOARD UPDATE]: ${msg.content}` };
+            }
+            return { role: msg.role as 'user' | 'assistant', content: msg.content };
+        });
 
         const conversationHistory: ChatMessage[] = [
             {
@@ -174,31 +182,38 @@ restRouter.post('/chat', async (req, res) => {
         const action = parseAgentAction(completion.content);
 
         let finalReply = '';
+        let roleToSave = 'assistant';
 
         if (action.type === 'user_message') {
             finalReply = action.payload?.content || action.raw_response || completion.content;
         } else if (action.type === 'tool_call' && action.target) {
-            if (!isAllowed(action.target, allowedToolsList)) {
-                finalReply = `ERROR: Attempted to use unauthorized tool: ${action.target}`;
-            } else {
-                broadcastUpdate('telemetry_log', `[SYSTEM] ${tier1Agent.toUpperCase()} executing ${action.target}...`);
-                const executionResult = await executeTool(action.target, action.payload);
+             if (!isAllowed(action.target, allowedToolsList)) {
+                 finalReply = `ERROR: Attempted to use unauthorized tool: ${action.target}`;
+                 roleToSave = 'system';
+             } else {
+                 broadcastUpdate('telemetry_log', `[SYSTEM] ${tier1Agent.toUpperCase()} executing ${action.target}...`);
+                 const executionResult = await executeTool(action.target, action.payload);
 
-                if (executionResult.success) {
+                 if (executionResult.success) {
                      broadcastUpdate('telemetry_log', `[SYSTEM] ${action.target} executed successfully.`);
                      broadcastUpdate('board_refresh', {});
-                     finalReply = `I have delegated the task to the workboard using ${action.target}.`;
-                } else {
-                    broadcastUpdate('telemetry_log', `[ERROR] ${action.target} failed: ${executionResult.error}`);
-                    finalReply = `I encountered an error trying to execute ${action.target}: ${executionResult.error}`;
-                }
-            }
+                     finalReply = `Task successfully delegated to the workboard via ${action.target}.`;
+                     roleToSave = 'system'; // SAVE AS SYSTEM TO PREVENT CONTEXT POISONING
+                 } else {
+                     broadcastUpdate('telemetry_log', `[ERROR] ${action.target} failed: ${executionResult.error}`);
+                     finalReply = `I encountered an error trying to execute ${action.target}: ${executionResult.error}`;
+                     roleToSave = 'system';
+                 }
+             }
         }
 
         // Save Agent's final reply to DB and broadcast
         if (finalReply) {
-            db.prepare(`INSERT INTO chat_history (role, content) VALUES ('assistant', ?)`).run(finalReply);
-            broadcastUpdate('chat_msg', { sender: tier1Agent.toUpperCase(), message: finalReply });
+            db.prepare(`INSERT INTO chat_history (role, content) VALUES (?, ?)`).run(roleToSave, finalReply);
+            broadcastUpdate('chat_msg', { 
+                sender: roleToSave === 'system' ? 'SYSTEM' : tier1Agent.toUpperCase(), 
+                message: finalReply 
+            });
         }
 
         res.json({ success: true, message: 'Message processed' });

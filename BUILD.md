@@ -208,6 +208,8 @@ How to use your new CLI integration bridge:To wire a local Python script:
 npm run axx -- tool incorp python ./axx_env/scripts/my_scraper.py
 (This automatically extracts the filename, generates the schema, and writes the child_process.spawn logic pointing to your isolated axx_env/bin/python environment).  To wire an external MCP tool:npm run axx -- tool incorp mcp db_query "npx -y @modelcontextprotocol/server-postgres postgres://localhost/mydb"(This generates the schema and writes the stdio pipeline to pass standard JSON-RPC payloads directly to the active MCP server).
 ---
+To an LLM, the user role doesn't strictly mean "the human." It means "input from the outside world."
+---
 ### END Axxanoid Harness: Build concepts and discoveries
 
 ### Axxanoid Harness: Build & Refactor Tracker
@@ -757,6 +759,9 @@ removed routing from
             * Update the Translation Layer (engine/translator.ts)
             * Lock Down the Chat Instruction (api/router.ts)
             * The Upgrade (channels/cli.ts) -- turn the CLI into a dynamic integration engine rather than a static template generator.
+            * Build a Safety Gate into tool execution (tools/native/workboard_create.ts)
+            *Discovered Context Poisoning.*
+            * Stop Context Poisoning (api/router.ts)
 
 
 

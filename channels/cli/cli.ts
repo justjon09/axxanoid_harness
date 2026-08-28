@@ -2,17 +2,17 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
-import { mcpIncorpTemplate } from './assets/templates/mcp.js';
-import { db } from '../../app/database.js';
-import { pyIncorpTemplate } from './assets/templates/py.js';
+import { mcpIncorpTemplate } from './assets/templates/mcp.ts';
+import { pyIncorpTemplate } from './assets/templates/py.ts';
+import { db } from '../../app/database.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PAUSE_FILE = path.resolve(__dirname, '../.PAUSED');
+const PAUSE_FILE = path.resolve(__dirname, '../../.PAUSED');
 
 // --- HELPER: Discover Tier 1 Agent dynamically ---
 function getTier1AgentId(): string {
-    const agentsDir = path.resolve(__dirname, '../agents');
+    const agentsDir = path.resolve(__dirname, '../../agents');
     if (!fs.existsSync(agentsDir)) return 'axxbot';
     
     for (const folder of fs.readdirSync(agentsDir)) {
@@ -121,7 +121,7 @@ switch (command) {
             process.exit(1);
         }
 
-        const controlPath = path.resolve(__dirname, '../configs/system_control.json');
+        const controlPath = path.resolve(__dirname, '../../configs/system_control.json');
         if (!fs.existsSync(controlPath)) {
             console.error(">>> [CLI] Error: system_control.json not found.");
             process.exit(1);
@@ -154,7 +154,7 @@ switch (command) {
             process.exit(1);
         }
 
-        const agentDir = path.resolve(__dirname, `../agents/${agentName}`);
+        const agentDir = path.resolve(__dirname, `../../agents/${agentName}`);
         const workspaceDir = path.join(agentDir, 'WORKSPACE');
 
         if (fs.existsSync(agentDir)) {
