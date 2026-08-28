@@ -76,6 +76,8 @@ export async function resolveDependencies() {
                 SET status = 'ready', updated_at = CURRENT_TIMESTAMP 
                 WHERE id = ?
             `).run(card.id);
+
+            broadcastUpdate('board_refresh', {});
             
             console.log(`>>> [ORCHESTRATOR] Unblocked card "${card.title}" (${card.id}) -> Promoted to READY`);
         }
@@ -103,6 +105,9 @@ export async function autoTriageBlockedCards() {
                 `Card ${card.id} is blocked. Read its payload for the 'missing_need'. Delegate a fix using workboard_create, then mark this triage task as done.`,
                 tier1Agent
             );
+
+            broadcastUpdate('board_refresh', {});
+            
             console.log(`>>> [ORCHESTRATOR] Auto-Spawned Triage Task [${triageId}] for Blocked Card [${card.id}] assigned to [${tier1Agent.toUpperCase()}]`);
         }
     }
@@ -129,6 +134,7 @@ export async function processTask(task: WorkboardCard) {
         SET status = 'in_progress', updated_at = CURRENT_TIMESTAMP 
         WHERE id = ?
     `).run(task.id);
+    broadcastUpdate('board_refresh', {});
     console.log(`>>> [ORCHESTRATOR] Processing Task [${task.id}] with Assignee [${task.assignee.toUpperCase()}]`);
 
     // JIT ROUTING & PERMISSION SCOPING
@@ -301,6 +307,8 @@ export async function processTask(task: WorkboardCard) {
         WHERE id = ?
         `
     ).run(finalStatus, JSON.stringify(lastResultPayload, null, 2), task.id);
+
+    broadcastUpdate('board_refresh', {});
 
     console.log(`>>> [ORCHESTRATOR] Task [${task.id}] Finalized -> STATUS: ${finalStatus.toUpperCase()}`);
 }

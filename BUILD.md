@@ -100,6 +100,19 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 
 ---
 
+### Phase 8: RAG Architecture
+* [X] **Step 23:** The Embedding Engine (llama-server)
+    * Download an embedding model
+        llama-server has a built-in /v1/embeddings endpoint -  download an embedding model (like nomic-embed-text-v1.5-GGUF), add it to models.ini, and the engine handles the vector math instantly on the GPU.
+* [ ] **Step 24:** The Vector Store (axx_env + ChromaDB)
+    * Install chromadb directly into axx_env
+        It will store the embeddings in a local folder (e.g., AXXANOID_HARNES/memory/vector_db/).
+* [ ] **Step 25:** The Tool Bridge (tools/native/)
+    * rag_ingest: Allows agents to read a file, chunk it, request the embedding from llama-server, and save it to ChromaDB.
+    * rag_search: Allows any agent to pass a search string, query the local ChromaDB, and return the most relevant text chunks into their immediate context.
+
+---
+
 ### Phase 8: Validation & End-to-End Factory Verification
 * [ ] **Step 23:** Full System Assembly & Playbook Finalization
     * Multi-agent dependency chain test (AxxBot creates card -> Noid writes code -> ExecuBot executes -> AxxBot reports final output).
@@ -209,6 +222,12 @@ npm run axx -- tool incorp python ./axx_env/scripts/my_scraper.py
 (This automatically extracts the filename, generates the schema, and writes the child_process.spawn logic pointing to your isolated axx_env/bin/python environment).  To wire an external MCP tool:npm run axx -- tool incorp mcp db_query "npx -y @modelcontextprotocol/server-postgres postgres://localhost/mydb"(This generates the schema and writes the stdio pipeline to pass standard JSON-RPC payloads directly to the active MCP server).
 ---
 To an LLM, the user role doesn't strictly mean "the human." It means "input from the outside world."
+---
+An 8k context window is a suffocating bottleneck when you are trying to feed an agent multiple tool schemas, a system prompt, and actual application code. It forces you to choose between memory crashes and amnesia.
+
+RAG (Retrieval-Augmented Generation) is exactly how we break this hardware limitation. Instead of stuffing the entire codebase into the prompt, the agent searches a local vector index and retrieves only the relevant code snippets exactly when it needs them.
+
+Because Axxanoid is a strict 100% offline, zero-cost OS, we cannot rely on external APIs like OpenAI embeddings or Pinecone. We have to build this locally.
 ---
 ### END Axxanoid Harness: Build concepts and discoveries
 
@@ -762,7 +781,32 @@ removed routing from
             * Build a Safety Gate into tool execution (tools/native/workboard_create.ts)
             *Discovered Context Poisoning.*
             * Stop Context Poisoning (api/router.ts)
+            * Harden the JSON Parser (engine/translator.ts)
+            * Clear the Poisoned Database
+            * UI Not Updating Automatically
+                * Open app/orchestrator.ts and add broadcastUpdate('board_refresh', {});
 
+looking for an html snippet to display the words "NOT-FACE" full screen to be used in an html/js module (on scroll pop up)
+
+
+
+--- PAUSED UI?WORKBORD FOR RAG SETUP ---
+### Phase 8: RAG Architecture
+    The Implementation Plan
+    If you want to pivot and build this immediately, here is our exact sequence:
+
+    Step 1: Install Dependencies
+    We jump into your axx_env and install the local vector database:
+    ./axx_env/bin/pip install chromadb requests
+
+    Step 2: Download the Embedding Model
+    We grab a lightweight embedding model (under 500MB) from HuggingFace and add it to engine/models.ini as a third slot.
+
+    Step 3: Build the Python RAG Bridge
+    We write a clean, simple Python script (tools/rag_bridge.py) that handles chunking text, talking to the local /v1/embeddings endpoint, and interacting with the ChromaDB database.
+
+    Step 4: Create the TS Tools & Skills
+    We wrap that Python script in our standard TS tool definitions (rag_search.ts and rag_ingest.ts) and create a new skill playbook (skills/native/rag_workflow.md) so the agents know exactly how to use it.
 
 
 
