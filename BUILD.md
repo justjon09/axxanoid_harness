@@ -204,6 +204,10 @@ Standard Schema Compliance: Uses JSON Schema Draft 7 as the baseline, making the
 
 Execution Boundary Isolation: Keeps external tool dependencies inside the axx_env Python sandbox or isolated TypeScript wrappers, ensuring third-party tools cannot pollute the core orchestrator.
 ---
+How to use your new CLI integration bridge:To wire a local Python script:
+npm run axx -- tool incorp python ./axx_env/scripts/my_scraper.py
+(This automatically extracts the filename, generates the schema, and writes the child_process.spawn logic pointing to your isolated axx_env/bin/python environment).  To wire an external MCP tool:npm run axx -- tool incorp mcp db_query "npx -y @modelcontextprotocol/server-postgres postgres://localhost/mydb"(This generates the schema and writes the stdio pipeline to pass standard JSON-RPC payloads directly to the active MCP server).
+---
 ### END Axxanoid Harness: Build concepts and discoveries
 
 ### Axxanoid Harness: Build & Refactor Tracker
@@ -743,10 +747,6 @@ removed routing from
             * Update the UI to Load History (channels/web/public/assets/app.js)
             * Corrected Database Setup
             * Boot the Chat Schema Independently (app/main.ts)
-                                            [1:42:37 PM] System connected to broadcast server.
-                                            [1:42:37 PM] Harness WS Live
-                                            [1:42:57 PM] [ERROR] Chat routing failed: no such column: id
-                                            [1:42:57 PM] Chat submission failed: no such column: id
             * Build the Memory Search Tool
                 * Create tools/native/chat_search.ts
                 * Update Master System Controls TOOLS (configs/system_control.json)
@@ -754,6 +754,11 @@ removed routing from
                 * Create skills/native/memory_retrieval.md
                 * Update Master System Controls SKILLS (configs/system_control.json)
                 * Grant AxxBot SKILL Permission (agents/axxbot/config.json)
+            * Update the Translation Layer (engine/translator.ts)
+            * Lock Down the Chat Instruction (api/router.ts)
+            * The Upgrade (channels/cli.ts) -- turn the CLI into a dynamic integration engine rather than a static template generator.
+
+
 
 
 --- living ---

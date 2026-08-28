@@ -117,7 +117,7 @@ restRouter.post('/chat', async (req, res) => {
         db.prepare(`INSERT INTO chat_history (role, content) VALUES ('user', ?)`).run(message);
         broadcastUpdate('chat_msg', { sender: 'CEO', message: message });
 
-        const agentDir = path.resolve(__dirname, `../../agents/${tier1Agent}`);
+        const agentDir = path.resolve(__dirname, `../agents/${tier1Agent}`);
         const configPath = path.join(agentDir, 'config.json');
         const soulPath = path.join(agentDir, 'SOUL.md');
         const identityPath = path.join(agentDir, 'IDENTITY.md');
@@ -152,12 +152,12 @@ restRouter.post('/chat', async (req, res) => {
             }
         }
 
-        const systemInstruction = "You are the Chief of Staff interacting directly with the CEO. If the CEO gives a directive that requires system action, you MUST use the appropriate tool (like workboard_create) to delegate the work. If the CEO asks a question or makes a conversational statement, reply directly using natural language.";
+        const systemInstruction = "You are the Chief of Staff interacting directly with the CEO. If the CEO gives a directive that requires system action, you MUST use the appropriate tool (like workboard_create) to delegate the work. ONLY CALL ONE TOOL PER RESPONSE. Do not attempt to read files and create cards at the same time. If the CEO asks a question or makes a conversational statement, reply directly using natural language.";
 
         // Fetch the last 15 messages for context
         const pastMessages = db.prepare(`
             SELECT role, content FROM (
-                SELECT role, content FROM chat_history ORDER BY id DESC LIMIT 15
+                SELECT id, role, content FROM chat_history ORDER BY id DESC LIMIT 15
             ) ORDER BY id ASC
         `).all() as { role: 'user' | 'assistant', content: string }[];
 
@@ -201,7 +201,7 @@ restRouter.post('/chat', async (req, res) => {
             broadcastUpdate('chat_msg', { sender: tier1Agent.toUpperCase(), message: finalReply });
         }
 
-        res.json({ success: true, id, message: 'Message processed' });
+        res.json({ success: true, message: 'Message processed' });
     } catch (err: any) {
         broadcastUpdate('telemetry_log', `[ERROR] Chat routing failed: ${err.message}`);
         res.status(500).json({ success: false, error: err.message });

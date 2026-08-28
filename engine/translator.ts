@@ -79,8 +79,8 @@ export function formatPromptForModel(
             `[AVAILABLE_TOOLS]\n` +
             JSON.stringify(tools, null, 2) +
             `\n[/AVAILABLE_TOOLS]\n\n` +
-            `To trigger a tool, output ONLY a valid JSON object:\n` +
-            `{"type": "tool_call", "target": "<tool_name>", "payload": {<arguments>}}`;
+            `To trigger a tool, output ONLY a valid JSON object matching this exact format. Do NOT output multiple tools:\n` +
+            `{"name": "<tool_name>", "parameters": {<arguments>}}`;
 
         if (formattedMessages.length > 0 && formattedMessages[0].role === 'system') {
             formattedMessages[0].content += `\n\n${toolSystemPrompt}`;
@@ -105,13 +105,12 @@ export function formatPromptForModel(
 }
 
 /**
- * Response Interceptor: Parses raw model text (strict JSON, markdown fences, or prose)
- * into structured AgentAction payloads.
+ * Response Interceptor: Parses raw model text into structured AgentAction payloads.
  */
 export function parseAgentAction(rawCompletion: string): AgentAction {
     const trimmed = rawCompletion.trim();
 
-    // 1. Direct JSON Parse Attempt
+    // Direct JSON Parse Attempt
     try {
         const parsed = JSON.parse(trimmed);
         if (parsed.type && parsed.payload) {
@@ -122,11 +121,35 @@ export function parseAgentAction(rawCompletion: string): AgentAction {
                 raw_response: rawCompletion
             };
         }
+        // Catch single Groq native format
+        if (parsed.name && parsed.parameters) {
+            return {
+                type: 'tool_call',
+                target: parsed.name,
+                payload: parsed.parameters,
+                raw_response: rawCompletion
+            };
+        }
     } catch {
         // Fall through
     }
 
-    // 2. Markdown Code Block Regex Extraction (```json ... ```)
+    // Catch Parallel Groq Format (e.g. `{"id": 0...} {"id": 1...}`)
+    try {
+        const groqFormat = `[${trimmed.replace(/}\s*\{/g, '}, {')}]`;
+        const parsedArray = JSON.parse(groqFormat);
+        if (Array.isArray(parsedArray) && parsedArray.length > 0) {
+            // Prioritize workboard_create if the model tried to do multiple things, otherwise grab the first tool
+            const targetTool = parsedArray.find(t => t.name === 'workboard_create') || parsedArray[0];
+            if (targetTool.name && targetTool.parameters) {
+                return { type: 'tool_call', target: targetTool.name, payload: targetTool.parameters, raw_response: rawCompletion };
+            }
+        }
+    } catch {
+         // Fall through
+    }
+
+    // Markdown Code Block Regex Extraction
     const jsonBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/i;
     const match = jsonBlockRegex.exec(trimmed);
     if (match && match[1]) {
@@ -140,12 +163,21 @@ export function parseAgentAction(rawCompletion: string): AgentAction {
                     raw_response: rawCompletion
                 };
             }
+            
+            if (parsed.name && parsed.parameters) {
+                return {
+                    type: 'tool_call',
+                    target: parsed.name,
+                    payload: parsed.parameters,
+                    raw_response: rawCompletion
+                };
+            }
         } catch {
             // Fall through
         }
     }
 
-    // 3. Unstructured Fallback
+    // Unstructured Fallback
     return {
         type: 'user_message',
         payload: { content: rawCompletion },

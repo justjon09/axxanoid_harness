@@ -7,7 +7,7 @@
     "start": "tsx app/main.ts",
     "dev": "tsx watch app/main.ts",
     "build": "tsc",
-    "axx": "tsx channels/cli.ts"
+    "axx": "tsx channels/cli/cli.ts"
   },
   "repository": {
     "type": "git",

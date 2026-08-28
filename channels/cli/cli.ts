@@ -2,7 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
-import { db } from '../app/database.ts';
+import { mcpIncorpTemplate } from './assets/templates/mcp.js';
+import { db } from '../../app/database.js';
+import { pyIncorpTemplate } from './assets/templates/py.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -186,68 +188,48 @@ switch (command) {
         const subCommand = args[1];
         if (subCommand === 'incorp') {
             const toolName = args[2]?.toLowerCase();
-            if (!toolName) {
-                console.log(">>> [CLI] Usage: axx tool incorp <name>");
-                process.exit(1);
-            }
-            const importedDir = path.resolve(__dirname, '../tools/imported');
+            const mode = args[2]?.toLowerCase(); // 'python' or 'mcp'
+            const importedDir = path.resolve(__dirname, '../../tools/imported');
+
             if (!fs.existsSync(importedDir)) {
                 fs.mkdirSync(importedDir, { recursive: true });
             }
-            const filePath = path.join(importedDir, `${toolName}.ts`);
-            if (fs.existsSync(filePath)) {
-                console.error(`>>> [CLI] Error: Imported tool '${toolName}.ts' already exists.`);
-                process.exit(1);
+
+            // Python Sandbox Auto-Inspector
+            if (mode === 'python') {
+                const pyPath = args[3];
+                if (!pyPath) {
+                    console.log(">>> [CLI] Usage: axx tool incorp python <filepath>");
+                    process.exit(1);
+                }
+                const toolName = path.basename(pyPath, '.py').toLowerCase();
+                const filePath = path.join(importedDir, `${toolName}.ts`);
+                const pyTemplate = pyIncorpTemplate(toolName, pyPath);
+                fs.writeFileSync(filePath, pyTemplate);
+                console.log(`>>> [CLI] Success: Auto-wired Python script to tools/imported/${toolName}.ts`);
+            
+                // MCP Server Auto-Importer
+            } else if (mode === 'mcp') {
+                const toolName = args[3]?.toLowerCase();
+                const mcpCommand = args.slice(4).join(' ');
+
+                if (!toolName || !mcpCommand) {
+                    console.log(">>> [CLI] Usage: axx tool incorp mcp <name> <start_command>");
+                    process.exit(1);
+                }
+                const filePath = path.join(importedDir, `${toolName}.ts`);
+                const mcpTemplate = mcpIncorpTemplate(toolName, mcpCommand);
+
+                fs.writeFileSync(filePath, mcpTemplate);
+                console.log(`>>> [CLI] Success: Auto-wired MCP server to tools/imported/${toolName}.ts`);
+            } else {
+                console.log(">>> [CLI] Unknown mode. Usage: axx tool incorp <python|mcp> ...");
             }
-            const template = `import { normalizeToolSchema } from '../../engine/translator.ts';
-
-// 1. Paste your external OpenAI or MCP JSON schema here:
-const externalSchema = {
-    "type": "function",
-    "function": {
-        "name": "${toolName}",
-        "description": "Description of the imported tool",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "example_param": { "type": "string", "description": "An example parameter" }
-            },
-            "required": ["example_param"]
-        }
-    }
-};
-
-// 2. The harness will automatically normalize this into a HarnessToolDefinition
-export const schema = normalizeToolSchema(externalSchema);
-
-// 3. Define how the tool actually executes
-export async function execute(payload: Record<string, any>) {
-    try {
-        console.log(\`Executing ${toolName} with payload:\`, payload);
-        
-        // TODO: Implement your external API call, SDK function, or local script trigger here.
-        
-        return {
-            success: true,
-            output: "Imported tool execution successful.",
-        };
-    } catch (err: any) {
-        return {
-            success: false,
-            output: '',
-            error: err.message || String(err)
-        };
-    }
-}
-`;
-
-        fs.writeFileSync(filePath, template);
-            console.log(`>>> [CLI] Success: Scaffolded imported tool at tools/imported/${toolName}.ts`);
         } else {
             console.log(">>> [CLI] Unknown tool subcommand. Did you mean: axx tool incorp <name>?");
         }
         break;
-    }
+    }    
     default:
         console.log(`>>> [CLI] Unknown command: ${command}`);
 }
