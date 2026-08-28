@@ -122,8 +122,9 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
     * Verify zero-cost, 100% offline execution on Apple Silicon Metal.
     * Update `END-TO-END.md` and `README.md` with final production commands.
 * [ ] **Step 27:** tool / skills audit 
-* [ ] **Step 28:** Refactor Heartbeat
-* [ ] **Step 29:** Create use instructions (how to add tool / skill / agent, cli commands)
+* [ ] **Step 28:** Grifts
+* [ ] **Step 29:** Refactor Heartbeat
+* [ ] **Step 30:** Create use instructions (how to add tool / skill / agent, cli commands)
 
 ## END Axxanoid Harness: Master Build Outline
 
@@ -842,7 +843,10 @@ looking for an html snippet to display the words "NOT-FACE" full screen to be us
     * The Search Wrapper (tools/native/rag_search.ts)
     * Enable Tools & Create System Folders
         * configs/system_control.json
-        * agents/axxbot/config.json
+        * agents/<all>/config.json
+    * Implementing the Memory Rebuild CLI (channels/cli/cli.ts)
+        * refactor cli functions to command dir. 
+        * cli case 'memory'
 
 --- living ---
 
@@ -902,8 +906,9 @@ looking for an html snippet to display the words "NOT-FACE" full screen to be us
 - [ ] **Step 25:** The Tool Bridge (tools/native/)
 - [ ] **Step 26:** Full System Assembly & Playbook Finalization
 - [ ] **Step 27:** tool / skills audit 
-- [ ] **Step 28:** Refactor Heartbeat
-- [ ] **Step 29:** Create use instructions (how to add tool / skill / agent, cli commands)
+* [ ] **Step 28:** Grifts
+- [ ] **Step 29:** Refactor Heartbeat
+- [ ] **Step 30:** Create use instructions (how to add tool / skill / agent, cli commands)
 
 
 ## Completed Log

@@ -8,7 +8,9 @@
     "run_terminal",
     "workboard_read",
     "workboard_mutate",
-    "workboard_create"
+    "workboard_create",
+    "rag_search",
+    "rag_ingest"
   ],
   "allowed_skills": [
     "system_telemetry",

@@ -9,7 +9,9 @@
     "list_files", 
     "workboard_read",
     "workboard_create",
-    "workboard_mutate"
+    "workboard_mutate",
+    "rag_search",
+    "rag_ingest"
   ],
   "allowed_skills": [
     "task_decomposition", 
