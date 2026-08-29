@@ -30,56 +30,60 @@ System Controls:
     `);
     process.exit(0);
 }
-
-switch (command) {
-    case 'add': {
-        addTask(args);
-        break;
-    }
-    case 'status': {
-        getStatus();
-        break;
-    }
-    case 'pause': {
-        workboardPause();
-        break;
-    }
-    case 'resume': {
-        workboardResume();
-        break;
-    }
-    case 'logs': {
-        getLogs(args);
-        break;
-    }
-    case 'toggle': {
-        systemSwitch(args);
-        break;
-    }
-    case 'agent': {
-        agentCreate(args);
-        break;
-    }
-    case 'tool': {
-        const subCommand = args[1];
-        if (subCommand === 'incorp') {
-            incorpTool(args);
-        } else {
-            console.log(">>> [CLI] Unknown tool subcommand. Did you mean: axx tool incorp <name>?");
-            process.exit(1);
+async function runCLI() {
+    switch (command) {
+        case 'add': {
+            addTask(args);
+            break;
         }
-        break;
-    }
-    case 'memory': {
-        const subCommand = args[1];
-        if (subCommand === 'rebuild') {
-            memoryRebuild(args);
-        } else {
-            console.log(">>> [CLI] Usage: axx memory rebuild <souls|knowledge|archive>");
-            process.exit(1);
+        case 'status': {
+            getStatus();
+            break;
         }
-        break;
-    } 
-    default:
-        console.log(`>>> [CLI] Unknown command: ${command}`);
+        case 'pause': {
+            workboardPause();
+            break;
+        }
+        case 'resume': {
+            workboardResume();
+            break;
+        }
+        case 'logs': {
+            getLogs(args);
+            break;
+        }
+        case 'toggle': {
+            systemSwitch(args);
+            break;
+        }
+        case 'agent': {
+            agentCreate(args);
+            break;
+        }
+        case 'tool': {
+            const subCommand = args[1];
+            if (subCommand === 'incorp') {
+                incorpTool(args);
+            } else {
+                console.log(">>> [CLI] Unknown tool subcommand. Did you mean: axx tool incorp <name>?");
+                process.exit(1);
+            }
+            break;
+        }
+        case 'memory': {
+            const subCommand = args[1];
+            if (subCommand === 'rebuild') {
+                await memoryRebuild(args);
+            } else {
+                console.log(">>> [CLI] Usage: axx memory rebuild <souls|knowledge|archive>");
+                process.exit(1);
+            }
+            break;
+        } 
+        default:
+            console.log(`>>> [CLI] Unknown command: ${command}`);
+    }
 }
+
+// Ignite the CLI
+runCLI();

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { __dirname } from './index.ts';
 
 export function systemSwitch (args: string[]) {
     const targetType = args[1]; // 'tool' or 'skill'

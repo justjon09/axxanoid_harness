@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { db, runBridge } from './index.ts';
+import { db, runBridge, __dirname } from './index.ts';
 
 export async function memoryRebuild (args: string[]) {
     const target = args[2];    

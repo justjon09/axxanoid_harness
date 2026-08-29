@@ -15,7 +15,13 @@ client = chromadb.PersistentClient(path=DB_DIR, settings=chromadb.Settings(anony
 LLAMA_URL = "http://127.0.0.1:8080/v1/embeddings"
 
 def get_embedding(text):
-    res = requests.post(LLAMA_URL, json={"input": text})
+    res = requests.post(
+        LLAMA_URL,
+        json={
+            "input": text,
+            "model": "nomic-embed-text"
+        }
+    )
     res.raise_for_status()
     return res.json()['data'][0]['embedding']
 

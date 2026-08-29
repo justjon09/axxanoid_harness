@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { __dirname } from './index.ts';
 
 export function agentCreate (args: string[]) {
     const subCommand = args[1];

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
 // --- HELPERS --- //
@@ -21,9 +22,8 @@ export function getTier1AgentId(): string {
 
 // Helper to execute the Python RAG bridge synchronously
 export async function runBridge (mode: string, payload: any) {
-    const { spawnSync } = await import('child_process');
     const venvPython = path.resolve(__dirname, '../../../../axx_env/bin/python');
-    const scriptPath = path.resolve(__dirname, './../../../tools/rag_bridge.py');
+    const scriptPath = path.resolve(__dirname, '../../../../tools/rag_bridge.py');
     const proc = spawnSync(venvPython, [scriptPath, mode, JSON.stringify(payload)], { encoding: 'utf-8' });
     if (proc.stdout && proc.stdout.trim()) console.log(proc.stdout.trim());
     if (proc.stderr && proc.stderr.trim()) console.error(proc.stderr.trim());

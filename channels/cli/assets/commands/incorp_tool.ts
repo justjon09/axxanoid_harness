@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { __dirname } from './index.ts';
 import { pyIncorpTemplate } from '../../assets/templates/py.ts';
 import { mcpIncorpTemplate } from '../../assets/templates/mcp.ts';
 

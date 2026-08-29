@@ -49,5 +49,8 @@ engine/models/*
 *.db
 *.db-wal
 *.db-shm
+# Vector / Chroma
+memory/*
+
 # Agent Avatars
 agents/avatars/*.png
