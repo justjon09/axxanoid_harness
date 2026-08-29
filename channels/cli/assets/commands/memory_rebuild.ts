@@ -33,7 +33,7 @@ export async function memoryRebuild (args: string[]) {
         console.log(">>> [CLI] Rebuilding 'knowledge' vector collection...");
         runBridge('reset', { collection: 'knowledge' });
         
-        const knowDir = path.resolve(__dirname, '../../configs/knowledge');
+        const knowDir = path.resolve(__dirname, '../../configs/knowledge/known');
         if (fs.existsSync(knowDir)) {
             const files = fs.readdirSync(knowDir).filter(f => f.endsWith('.md') || f.endsWith('.txt'));
             for (const file of files) {

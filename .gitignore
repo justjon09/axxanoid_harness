@@ -19,6 +19,7 @@ pnpm-debug.log*
 
 # Environment variables (Contains sensitive keys)
 axx_env/
+/configs/knowledge/known/*
 .env
 .env.local
 .env.development.local
