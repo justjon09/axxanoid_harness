@@ -152,7 +152,7 @@ restRouter.post('/chat', async (req, res) => {
             }
         }
 
-        const systemInstruction = "You are the Chief of Staff interacting directly with the CEO. If the CEO gives a directive that requires system action, you MUST use the appropriate tool (like workboard_create) to delegate the work. ONLY CALL ONE TOOL PER RESPONSE. Do not attempt to read files and create cards at the same time. If the CEO asks a question or makes a conversational statement, reply directly using natural language.";
+        const systemInstruction = "You are an intelligent routing agent. Do not lie and do not guess. If you lack information, use your tools to look for it. If you still cannot find it, ask the user where or how to find it. To perform actions or searches, output a JSON tool_call. Always analyze the results of your tools. If the tool result answers the user's prompt or completes the action, output a natural language response to the user.";
 
         // Fetch the last 15 messages for context
         const pastMessagesRaw = db.prepare(`
@@ -178,33 +178,68 @@ restRouter.post('/chat', async (req, res) => {
         ];
 
         const formattedMessages = formatPromptForModel(conversationHistory, activeTools, promptFormat);
-        const completion = await sendLlamaCompletion(formattedMessages, { model: modelAlias });
-        const action = parseAgentAction(completion.content);
 
         let finalReply = '';
         let roleToSave = 'assistant';
+        let attempts = 0;
+        const maxAttempts = 4; // Prevent infinite loops
+        let requestResolved = false;
 
-        if (action.type === 'user_message') {
-            finalReply = action.payload?.content || action.raw_response || completion.content;
-        } else if (action.type === 'tool_call' && action.target) {
-             if (!isAllowed(action.target, allowedToolsList)) {
-                 finalReply = `ERROR: Attempted to use unauthorized tool: ${action.target}`;
-                 roleToSave = 'system';
-             } else {
-                 broadcastUpdate('telemetry_log', `[SYSTEM] ${tier1Agent.toUpperCase()} executing ${action.target}...`);
-                 const executionResult = await executeTool(action.target, action.payload);
+        while (attempts < maxAttempts && !requestResolved) {
+            attempts++;
+            const completion = await sendLlamaCompletion(formattedMessages, { model: modelAlias });
+            const action = parseAgentAction(completion.content);
 
-                 if (executionResult.success) {
-                     broadcastUpdate('telemetry_log', `[SYSTEM] ${action.target} executed successfully.`);
-                     broadcastUpdate('board_refresh', {});
-                     finalReply = `Task successfully delegated to the workboard via ${action.target}.`;
-                     roleToSave = 'system'; // SAVE AS SYSTEM TO PREVENT CONTEXT POISONING
-                 } else {
-                     broadcastUpdate('telemetry_log', `[ERROR] ${action.target} failed: ${executionResult.error}`);
-                     finalReply = `I encountered an error trying to execute ${action.target}: ${executionResult.error}`;
-                     roleToSave = 'system';
-                 }
-             }
+            if (action.type === 'user_message') {
+                // The LLM has decided it is done and wants to speak to the user
+                finalReply = action.payload?.content || action.raw_response || completion.content;
+                roleToSave = 'assistant';
+                requestResolved = true;
+            }
+            else if (action.type === 'tool_call' && action.target) {
+                // The LLM wants to use a tool
+                if (!isAllowed(action.target, allowedToolsList)) {
+                    broadcastUpdate('telemetry_log', `[SYSTEM BLOCK] Unauthorized tool attempt: ${action.target}`);
+                    formattedMessages.push({ role: 'assistant', content: completion.content });
+                    formattedMessages.push({ role: 'user', content: `[SYSTEM ERROR] You do not have permission to use the tool '${action.target}'.` });
+                } else {
+                    broadcastUpdate('telemetry_log', `[SYSTEM] ${tier1Agent.toUpperCase()} executing ${action.target}...`);
+                    const executionResult = await executeTool(action.target, action.payload);
+
+                    // Push the LLM's tool call into the context
+                    formattedMessages.push({ role: 'assistant', content: completion.content });
+
+                    if (executionResult.success) {
+                        broadcastUpdate('telemetry_log', `[SYSTEM] ${action.target} executed successfully.`);
+                        broadcastUpdate('board_refresh', {});
+                        
+                        // Feed the tool result back into the context so the LLM can read it
+                        formattedMessages.push({ 
+                            role: 'user', 
+                            content: `[SYSTEM TOOL RESULT - ${action.target}]\n${executionResult.output}\n\nAnalyze this result. If you have fulfilled the user's request, reply to them naturally. If you need more information, call another tool.` 
+                        });
+                    } else {
+                        broadcastUpdate('telemetry_log', `[ERROR] ${action.target} failed: ${executionResult.error}`);
+                        // Feed the error back so the LLM can self-heal or tell the user it failed
+                        formattedMessages.push({ 
+                            role: 'user', 
+                            content: `[SYSTEM TOOL ERROR - ${action.target}]\n${executionResult.error}\n\nFix the issue and try again, or inform the user of the failure.` 
+                        });
+                    }
+                }
+            }
+            else {
+                // Fallback for unparseable output
+                finalReply = completion.content;
+                roleToSave = 'assistant';
+                requestResolved = true;
+            }
+        }
+
+        // Safety catch if the LLM loops too many times without returning a user_message
+        if (!requestResolved) {
+            finalReply = "I reached my maximum processing limit while trying to complete this request.";
+            roleToSave = 'system';
         }
 
         // Save Agent's final reply to DB and broadcast

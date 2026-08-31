@@ -33,7 +33,7 @@ export async function memoryRebuild (args: string[]) {
         console.log(">>> [CLI] Rebuilding 'knowledge' vector collection...");
         runBridge('reset', { collection: 'knowledge' });
         
-        const knowDir = path.resolve(__dirname, '../../configs/knowledge/known');
+        const knowDir = path.resolve(__dirname, '../../../../configs/knowledge/known');
         if (fs.existsSync(knowDir)) {
             const files = fs.readdirSync(knowDir).filter(f => f.endsWith('.md') || f.endsWith('.txt'));
             for (const file of files) {
@@ -41,7 +41,7 @@ export async function memoryRebuild (args: string[]) {
                 runBridge('ingest', { text: content, source: file, collection: 'knowledge' });
             }
         } else {
-            console.log(">>> [CLI] Directory configs/knowledge/ does not exist. Creating it now...");
+            console.log(">>> [CLI] Directory configs/knowledge/known/ does not exist. Creating it now...");
             fs.mkdirSync(knowDir, { recursive: true });
         }
     } else if (target === 'archive') {
