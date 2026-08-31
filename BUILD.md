@@ -847,6 +847,12 @@ looking for an html snippet to display the words "NOT-FACE" full screen to be us
     * Implementing the Memory Rebuild CLI (channels/cli/cli.ts)
         * refactor cli functions to command dir. 
         * cli case 'memory'
+    * The 2-Pass Retrieval Loop
+        * Update the System Instruction (api/router.ts)
+            * The Generic System Instruction
+        * The True Agentic Loop
+            *I'm sorry, but I don't have the capability to directly access external tools or databases to search for information.*
+        * The Fix (engine/translator.ts)
 
 --- living ---
 

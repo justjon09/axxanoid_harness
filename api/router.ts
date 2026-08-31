@@ -152,7 +152,7 @@ restRouter.post('/chat', async (req, res) => {
             }
         }
 
-        const systemInstruction = "You are an intelligent routing agent. Do not lie and do not guess. If you lack information, use your tools to look for it. If you still cannot find it, ask the user where or how to find it. To perform actions or searches, output a JSON tool_call. Always analyze the results of your tools. If the tool result answers the user's prompt or completes the action, output a natural language response to the user.";
+        const systemInstruction = "You have full authorization to execute the provided tools. Output the required JSON tool_call to perform system actions.";
 
         // Fetch the last 15 messages for context
         const pastMessagesRaw = db.prepare(`

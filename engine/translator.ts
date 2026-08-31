@@ -113,6 +113,7 @@ export function parseAgentAction(rawCompletion: string): AgentAction {
     // Direct JSON Parse Attempt
     try {
         const parsed = JSON.parse(trimmed);
+        // Standard format
         if (parsed.type && parsed.payload) {
             return {
                 type: parsed.type,
@@ -121,13 +122,22 @@ export function parseAgentAction(rawCompletion: string): AgentAction {
                 raw_response: rawCompletion
             };
         }
-        // Catch single Groq native format
+        // Groq native format
         if (parsed.name && parsed.parameters) {
             return {
                 type: 'tool_call',
                 target: parsed.name,
                 payload: parsed.parameters,
                 raw_response: rawCompletion
+            };
+        }
+        //  Catch hybrid format
+        if (parsed.type && parsed.parameters) {
+            return { 
+                type: 'tool_call', 
+                target: parsed.type, // Treats "rag_search" as the target tool
+                payload: parsed.parameters, 
+                raw_response: rawCompletion 
             };
         }
     } catch {
