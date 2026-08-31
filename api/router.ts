@@ -191,10 +191,25 @@ restRouter.post('/chat', async (req, res) => {
             const action = parseAgentAction(completion.content);
 
             if (action.type === 'user_message') {
-                // The LLM has decided it is done and wants to speak to the user
-                finalReply = action.payload?.content || action.raw_response || completion.content;
-                roleToSave = 'assistant';
-                requestResolved = true;
+                const candidateContent = action.payload?.content || action.raw_response || completion.content;
+                
+                // If the "user_message" contains raw tool-calling syntax, the parser failed.
+                if (candidateContent.includes('{"name":') || candidateContent.includes('{"type":') || candidateContent.includes('```json')) {
+                    
+                    // DO NOT FAIL SILENTLY: Broadcast the exact error to the CEO's dashboard
+                    const errMsg = `[PARSER ERROR] Agent hallucinated bad syntax. Forcing self-correction...`;
+                    console.warn(`>>> ${errMsg}`);
+                    broadcastUpdate('telemetry_log', errMsg);
+
+                    // Let the agent learn in the short-term by feeding its mistake back to it
+                    formattedMessages.push({ role: 'assistant', content: completion.content });
+                    formattedMessages.push({ role: 'user', content: '[SYSTEM ERROR] You output malformed JSON or raw tool-call syntax. You must use the exact required JSON schema or reply with clean conversational text.' });
+                } else {
+                    // It is a genuine, clean text response to the CEO. Exit loop and save.
+                    finalReply = candidateContent;
+                    roleToSave = 'assistant';
+                    requestResolved = true;
+                }
             }
             else if (action.type === 'tool_call' && action.target) {
                 // The LLM wants to use a tool
@@ -236,10 +251,11 @@ restRouter.post('/chat', async (req, res) => {
             }
         }
 
-        // Safety catch if the LLM loops too many times without returning a user_message
+        // Safety catch if the LLM loops too many times
         if (!requestResolved) {
-            finalReply = "I reached my maximum processing limit while trying to complete this request.";
-            roleToSave = 'system';
+            // 3. Permanent DB Learning: The agent failed. Record a clean failure in the DB.
+            finalReply = "[SYSTEM DIAGNOSTIC] I reached my maximum processing limit and failed to format the tool call correctly. I need the CEO to clarify or reset the task.";
+            roleToSave = 'assistant'; // Save as assistant so it owns the failure cleanly
         }
 
         // Save Agent's final reply to DB and broadcast
