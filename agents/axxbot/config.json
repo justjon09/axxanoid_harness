@@ -1,7 +1,7 @@
 {
   "agent_id": "axxbot",
   "tier": 1,
-  "assigned_model": "llama-3-groq-8b-tool-use",
+  "assigned_model": "qwen2.5-coder-14b-instruct",
   "workspace_path": "AXXANOID_HARNES/agents/axxbot/WORKSPACE/",
   "allowed_tools": [
     "workboard_*",

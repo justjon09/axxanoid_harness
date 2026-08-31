@@ -185,10 +185,37 @@ restRouter.post('/chat', async (req, res) => {
         const maxAttempts = 4; // Prevent infinite loops
         let requestResolved = false;
 
+        // The bulletproof structural envelope
+        const grammarSchema = {
+            type: "object",
+            properties: {
+                type: { type: "string", enum: ["tool_call", "user_message"] },
+                target: { type: "string", description: "The exact name of the tool being called." },
+                payload: { type: "object", description: "The arguments for the tool, or { 'content': 'message' } if user_message" }
+            },
+            required: ["type", "payload"]
+        };
+
         while (attempts < maxAttempts && !requestResolved) {
             attempts++;
-            const completion = await sendLlamaCompletion(formattedMessages, { model: modelAlias });
-            const action = parseAgentAction(completion.content);
+
+            // Dispatch with the hardware-level JSON lock
+            const completion = await sendLlamaCompletion(formattedMessages, { 
+                model: modelAlias,
+                response_format: {
+                    type: "json_object",
+                    schema: grammarSchema
+                }
+            });
+
+            // Because of the engine lock, JSON.parse is guaranteed to work
+            let action;
+            try {
+                action = JSON.parse(completion.content || "{}");
+            } catch (e) {
+                // Fallback ONLY if the engine somehow violates its own GBNF grammar
+                action = { type: 'user_message', payload: { content: completion.content } };
+            }
 
             if (action.type === 'user_message') {
                 const candidateContent = action.payload?.content || action.raw_response || completion.content;

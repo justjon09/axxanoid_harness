@@ -75,12 +75,24 @@ export function formatPromptForModel(
     if (tools.length === 0) return formattedMessages;
 
     if (modelType === 'llama3_groq') {
+       // Map our Harness tools to OpenAI style for the Groq prompt
+        const groqTools = tools.map(t => ({
+            name: t.name,
+            description: t.description,
+            parameters: {
+                type: "object",
+                properties: t.parameters,
+                required: Object.keys(t.parameters).filter(k => t.parameters[k].required)
+            }
+        }));
+
         const toolSystemPrompt = 
-            `[AVAILABLE_TOOLS]\n` +
-            JSON.stringify(tools, null, 2) +
-            `\n[/AVAILABLE_TOOLS]\n\n` +
-            `To trigger a tool, output ONLY a valid JSON object matching this exact format. Do NOT output multiple tools:\n` +
-            `{"name": "<tool_name>", "parameters": {<arguments>}}`;
+            `You are a function calling AI model. You are provided with function signatures within XML tags. You may call one or more functions to assist with the user query. Don't make assumptions about what values to plug into functions.\n\n` +
+            `For each function call return a json object with function name and arguments within XML tags as follows:\n` +
+            `<tool_call>\n{"name": "<function-name>", "arguments": <args-dict>}\n</tool_call>\n\n` +
+            `Here are the available tools:\n<tools>\n` +
+            JSON.stringify(groqTools, null, 2) +
+            `\n</tools>`;
 
         if (formattedMessages.length > 0 && formattedMessages[0].role === 'system') {
             formattedMessages[0].content += `\n\n${toolSystemPrompt}`;
@@ -109,6 +121,25 @@ export function formatPromptForModel(
  */
 export function parseAgentAction(rawCompletion: string): AgentAction {
     const trimmed = rawCompletion.trim();
+    
+    // Catch Groq <tool_call> XML format
+    const toolCallRegex = /<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/i;
+    const toolMatch = toolCallRegex.exec(trimmed);
+    if (toolMatch && toolMatch[1]) {
+        try {
+            const parsed = JSON.parse(toolMatch[1].trim());
+            if (parsed.name && parsed.arguments) {
+                return {
+                    type: 'tool_call',
+                    target: parsed.name,
+                    payload: parsed.arguments,
+                    raw_response: rawCompletion
+                };
+            }
+        } catch {
+            // Fall through
+        }
+    }
 
     // Direct JSON Parse Attempt
     try {
@@ -123,11 +154,11 @@ export function parseAgentAction(rawCompletion: string): AgentAction {
             };
         }
         // Groq native format
-        if (parsed.name && parsed.parameters) {
+        if (parsed.name && (parsed.parameters || parsed.arguments)) {
             return {
                 type: 'tool_call',
                 target: parsed.name,
-                payload: parsed.parameters,
+                payload: parsed.parameters || parsed.arguments,
                 raw_response: rawCompletion
             };
         }
@@ -151,8 +182,13 @@ export function parseAgentAction(rawCompletion: string): AgentAction {
         if (Array.isArray(parsedArray) && parsedArray.length > 0) {
             // Prioritize workboard_create if the model tried to do multiple things, otherwise grab the first tool
             const targetTool = parsedArray.find(t => t.name === 'workboard_create') || parsedArray[0];
-            if (targetTool.name && targetTool.parameters) {
-                return { type: 'tool_call', target: targetTool.name, payload: targetTool.parameters, raw_response: rawCompletion };
+            if (targetTool.name && (targetTool.parameters || targetTool.arguments)) {
+                return { 
+                    type: 'tool_call', 
+                    target: targetTool.name, 
+                    payload: targetTool.parameters || targetTool.arguments, 
+                    raw_response: rawCompletion 
+                };
             }
         }
     } catch {
