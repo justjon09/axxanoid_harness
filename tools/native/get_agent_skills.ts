@@ -30,6 +30,7 @@ export async function execute(payload: Record<string, any>): Promise<ToolResult>
                 const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
                 roster[config.agent_id] = {
                     tier: config.tier,
+                    workspace: config.workspace_path || 'Unknown',
                     allowed_skills: config.allowed_skills || [],
                     allowed_tools: config.allowed_tools || []
                 };

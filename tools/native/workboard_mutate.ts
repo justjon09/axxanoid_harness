@@ -30,7 +30,11 @@ export async function execute(payload: Record<string, any>): Promise<ToolResult>
 
         if (payload.result_payload !== undefined) {
             query += ', result_payload = ?';
-            params.push(payload.result_payload);
+            // FORCE STRING: If the LLM passed an object instead of a string, stringify it
+            const safePayload = typeof payload.result_payload === 'object' 
+                ? JSON.stringify(payload.result_payload) 
+                : String(payload.result_payload);
+            params.push(safePayload);
         }
 
         query += ' WHERE id = ?';

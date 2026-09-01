@@ -247,6 +247,7 @@ restRouter.post('/chat', async (req, res) => {
                 if (currentSignature === lastActionSignature) {
                     consecutiveDuplicates++;
                     console.warn(`>>> [LOOP DETECTED] Duplicate tool call attempt ${consecutiveDuplicates}/${maxDuplicates}: ${action.target}`);
+                    console.warn(`    Payload: ${JSON.stringify(action.payload)}`);
                     
                     if (consecutiveDuplicates >= maxDuplicates) {
                         broadcastUpdate('telemetry_log', `[SYSTEM BLOCK] Agent stuck in an identical tool loop (${action.target}). Terminating task.`);

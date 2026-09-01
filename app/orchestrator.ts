@@ -201,8 +201,11 @@ export async function processTask(task: WorkboardCard) {
         }
     ];
 
-    let attempts = 0;
-    const maxAttempts = 3;
+    const hardCap = 15; // Absolute safety ceiling
+    const maxDuplicates = 3;
+    let totalSteps = 0;    
+    let consecutiveDuplicates = 0;    
+    let lastActionSignature = '';
     let taskCompleted = false;
     let lastResultPayload: any = null;
 
@@ -211,16 +214,16 @@ export async function processTask(task: WorkboardCard) {
         type: "object",
         properties: {
             type: { type: "string", enum: ["tool_call", "user_message"] },
-            target: { type: "string" },
-            payload: { type: "object" }
+            target: { type: "string", description: "The exact name of the tool being called, or 'chat' if type is user_message." },
+            payload: { type: "object", description: "The arguments for the tool, or { 'content': 'message' } if user_message." }
         },
         required: ["type", "target", "payload"]
     };
 
-    while (attempts < maxAttempts && !taskCompleted) {
-        attempts++;
-        console.log(`>>> [ORCHESTRATOR] Task [${task.id}] Execution Attempt ${attempts}/${maxAttempts}`);
-        broadcastUpdate('telemetry_log', `[ORCHESTRATOR] Task [${task.id}] Execution Attempt ${attempts}/${maxAttempts}`);
+    while (totalSteps < hardCap && !taskCompleted) {
+        totalSteps++;
+        console.log(`>>> [ORCHESTRATOR] Task [${task.id}] Execution Step ${totalSteps}/${hardCap}`);
+        broadcastUpdate('telemetry_log', `[ORCHESTRATOR] Task [${task.id}] Execution Step ${totalSteps}/${hardCap}`);
 
         try {
             // Format message include ONLY the activeTools to the LLM
@@ -245,7 +248,9 @@ export async function processTask(task: WorkboardCard) {
 
             // PROSE REJECTION: Worker agents MUST invoke tools, not chat
             if (isWorker && action.type === 'user_message') {
+                const candidateContent = action.payload?.content || action.raw_response || completion.content;
                 console.warn(`>>> [PROSE REJECTED] Worker [${task.assignee.toUpperCase()}] returned prose instead of a tool call.`);
+
                 conversationHistory.push({ role: 'assistant', content: completion.content });
                 conversationHistory.push({
                     role: 'user',
@@ -257,14 +262,51 @@ export async function processTask(task: WorkboardCard) {
                     timestamp: new Date().toISOString(),
                     agent: task.assignee,
                     error: 'Rejected: Worker returned conversational text.', 
-                    response: completion.content 
+                    response: candidateContent 
                 };
+
+                // Track duplicate prose rejections so they don't loop forever
+                const currentSignature = `user_message:${candidateContent}`;
+                if (currentSignature === lastActionSignature) {
+                    consecutiveDuplicates++;
+                    if (consecutiveDuplicates >= maxDuplicates) {
+                        console.warn(`>>> [LOOP DETECTED] Worker stuck in prose loop. Terminating task.`);
+                        taskCompleted = true; 
+                    }
+                } else {
+                    consecutiveDuplicates = 0;
+                    lastActionSignature = currentSignature;
+                }
                 continue;
             }
 
             // OS TOOL EXECUTION GATE
             if (action.type === 'tool_call' && action.target) {
-                // Double check permissions at the execution gate
+                const currentSignature = `${action.target}:${JSON.stringify(action.payload)}`;
+
+                // LOOP DETECTOR: Check if the worker is repeating itself
+                if (currentSignature === lastActionSignature) {
+                    consecutiveDuplicates++;
+                    console.warn(`>>> [LOOP DETECTED] Duplicate tool call attempt ${consecutiveDuplicates}/${maxDuplicates}: ${action.target}`);
+                    console.warn(`    Payload: ${JSON.stringify(action.payload)}`);
+                    
+                    if (consecutiveDuplicates >= maxDuplicates) {
+                        broadcastUpdate('telemetry_log', `[SYSTEM BLOCK] Worker stuck in identical tool loop (${action.target}). Terminating task.`);
+                        lastResultPayload = {
+                            timestamp: new Date().toISOString(),
+                            agent: task.assignee,
+                            error: `Execution halted: Stuck in an identical loop calling '${action.target}'. Payload: ${JSON.stringify(action.payload)}`
+                        };
+                        taskCompleted = true;
+                        break;
+                    }
+                } else {
+                    // PROGRESS MADE: Reset duplicate counter on unique actions
+                    consecutiveDuplicates = 0;
+                    lastActionSignature = currentSignature;
+                }
+
+                 // Double check permissions at the execution gate
                 if (!isAllowed(action.target, allowedToolsList)) {
                     console.warn(`>>> [SECURITY BLOCK] ${task.assignee.toUpperCase()} attempted to use unauthorized tool: ${action.target}`);
                     conversationHistory.push({ role: 'assistant', content: completion.content });
@@ -273,7 +315,7 @@ export async function processTask(task: WorkboardCard) {
                 }
 
                 console.log(`>>> [EXECUTION] Intercepted Tool [${action.target}]. Executing on OS...`);
-                const executionResult: ToolResult = await executeTool(action.target, action.payload);
+                const executionResult = await executeTool(action.target, action.payload);
 
                 // Standardized Execution Wrapper
                 lastResultPayload = { 
@@ -306,7 +348,7 @@ export async function processTask(task: WorkboardCard) {
                 };
             }
         } catch (error: any) {
-            console.error(`>>> [INFERENCE ERROR] Attempt ${attempts} failed: ${error.message}`);
+            console.error(`>>> [INFERENCE ERROR] Step ${totalSteps} failed: ${error.message}`);
             lastResultPayload = { 
                 timestamp: new Date().toISOString(),
                 agent: task.assignee,
