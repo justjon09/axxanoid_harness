@@ -5,31 +5,11 @@ import { db, runBridge, __dirname } from './index.ts';
 export async function memoryRebuild (args: string[]) {
     const target = args[2];    
     if (!['souls', 'knowledge', 'archive'].includes(target)) {
-        console.log(">>> [CLI] Usage: axx memory rebuild <souls|knowledge|archive>");
+        console.log(">>> [CLI] Usage: axx memory rebuild <knowledge|archive>");
         process.exit(1);
     }
 
-    if (target === 'souls') {
-        console.log(">>> [CLI] Rebuilding 'souls' vector collection...");
-        runBridge('reset', { collection: 'souls' });
-        
-        const agentsDir = path.resolve(__dirname, '../../../../agents');
-        if (fs.existsSync(agentsDir)) {
-            const folders = fs.readdirSync(agentsDir);
-            for (const folder of folders) {
-                const soulPath = path.join(agentsDir, folder, 'SOUL.md');
-                const idPath = path.join(agentsDir, folder, 'IDENTITY.md');
-                let combined = '';
-                
-                if (fs.existsSync(idPath)) combined += fs.readFileSync(idPath, 'utf-8') + '\n\n';
-                if (fs.existsSync(soulPath)) combined += fs.readFileSync(soulPath, 'utf-8');
-                
-                if (combined) {
-                    runBridge('ingest', { text: combined, source: `${folder}_profile`, collection: 'souls' });
-                }
-            }
-        }
-    } else if (target === 'knowledge') {
+    if (target === 'knowledge') {
         console.log(">>> [CLI] Rebuilding 'knowledge' vector collection...");
         runBridge('reset', { collection: 'knowledge' });
         

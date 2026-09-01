@@ -10,7 +10,8 @@ export interface CompletionOptions {
     max_tokens?: number;
     top_p?: number;
     response_format?: {
-        type: 'text' | 'json_object';
+        type: 'text' | 'json_object'| 'json_schema';
+        schema?: object;
         json_schema?: object;
     };
 }

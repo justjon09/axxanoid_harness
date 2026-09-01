@@ -179,25 +179,28 @@ restRouter.post('/chat', async (req, res) => {
 
         const formattedMessages = formatPromptForModel(conversationHistory, activeTools, promptFormat);
 
+        const maxDuplicates = 3; // Kill if stuck executing the EXACT same tool call 3x in a row
+        const hardCap = 15; // Absolute safety ceiling
         let finalReply = '';
         let roleToSave = 'assistant';
-        let attempts = 0;
-        const maxAttempts = 4; // Prevent infinite loops
+        let totalSteps = 0;        
+        let consecutiveDuplicates = 0;        
+        let lastActionSignature = '';
         let requestResolved = false;
 
-        // The bulletproof structural envelope
+        // The structural envelope
         const grammarSchema = {
             type: "object",
             properties: {
                 type: { type: "string", enum: ["tool_call", "user_message"] },
-                target: { type: "string", description: "The exact name of the tool being called." },
-                payload: { type: "object", description: "The arguments for the tool, or { 'content': 'message' } if user_message" }
+                target: { type: "string", description: "The exact name of the tool being called, or 'chat' if type is user_message." },
+                payload: { type: "object", description: "The arguments for the tool, or { 'content': 'message' } if user_message." }
             },
-            required: ["type", "payload"]
+            required: ["type", "target", "payload"]
         };
 
-        while (attempts < maxAttempts && !requestResolved) {
-            attempts++;
+        while (totalSteps < hardCap && !requestResolved) {
+            totalSteps++;
 
             // Dispatch with the hardware-level JSON lock
             const completion = await sendLlamaCompletion(formattedMessages, { 
@@ -220,14 +223,12 @@ restRouter.post('/chat', async (req, res) => {
             if (action.type === 'user_message') {
                 const candidateContent = action.payload?.content || action.raw_response || completion.content;
                 
-                // If the "user_message" contains raw tool-calling syntax, the parser failed.
                 if (candidateContent.includes('{"name":') || candidateContent.includes('{"type":') || candidateContent.includes('```json')) {
-                    
                     // DO NOT FAIL SILENTLY: Broadcast the exact error to the CEO's dashboard
                     const errMsg = `[PARSER ERROR] Agent hallucinated bad syntax. Forcing self-correction...`;
                     console.warn(`>>> ${errMsg}`);
                     broadcastUpdate('telemetry_log', errMsg);
-
+                   
                     // Let the agent learn in the short-term by feeding its mistake back to it
                     formattedMessages.push({ role: 'assistant', content: completion.content });
                     formattedMessages.push({ role: 'user', content: '[SYSTEM ERROR] You output malformed JSON or raw tool-call syntax. You must use the exact required JSON schema or reply with clean conversational text.' });
@@ -237,9 +238,28 @@ restRouter.post('/chat', async (req, res) => {
                     roleToSave = 'assistant';
                     requestResolved = true;
                 }
-            }
-            else if (action.type === 'tool_call' && action.target) {
                 // The LLM wants to use a tool
+            } else if (action.type === 'tool_call' && action.target) {
+                // Generate a unique fingerprint of this tool call
+                const currentSignature = `${action.target}:${JSON.stringify(action.payload)}`;
+
+                // LOOP DETECTOR: Check if the model is repeating itself
+                if (currentSignature === lastActionSignature) {
+                    consecutiveDuplicates++;
+                    console.warn(`>>> [LOOP DETECTED] Duplicate tool call attempt ${consecutiveDuplicates}/${maxDuplicates}: ${action.target}`);
+                    
+                    if (consecutiveDuplicates >= maxDuplicates) {
+                        broadcastUpdate('telemetry_log', `[SYSTEM BLOCK] Agent stuck in an identical tool loop (${action.target}). Terminating task.`);
+                        finalReply = `[SYSTEM DIAGNOSTIC] Execution halted: Stuck in an identical loop calling '${action.target}'.`;
+                        requestResolved = true;
+                        break;
+                    }
+                } else {
+                    // PROGRESS MADE: Reset duplicate counter on unique actions
+                    consecutiveDuplicates = 0;
+                    lastActionSignature = currentSignature;
+                }
+
                 if (!isAllowed(action.target, allowedToolsList)) {
                     broadcastUpdate('telemetry_log', `[SYSTEM BLOCK] Unauthorized tool attempt: ${action.target}`);
                     formattedMessages.push({ role: 'assistant', content: completion.content });
@@ -250,27 +270,27 @@ restRouter.post('/chat', async (req, res) => {
 
                     // Push the LLM's tool call into the context
                     formattedMessages.push({ role: 'assistant', content: completion.content });
-
                     if (executionResult.success) {
                         broadcastUpdate('telemetry_log', `[SYSTEM] ${action.target} executed successfully.`);
                         broadcastUpdate('board_refresh', {});
-                        
+
                         // Feed the tool result back into the context so the LLM can read it
                         formattedMessages.push({ 
-                            role: 'user', 
-                            content: `[SYSTEM TOOL RESULT - ${action.target}]\n${executionResult.output}\n\nAnalyze this result. If you have fulfilled the user's request, reply to them naturally. If you need more information, call another tool.` 
+                            role: 'tool', 
+                            name: action.target,
+                            content: executionResult.output
                         });
                     } else {
                         broadcastUpdate('telemetry_log', `[ERROR] ${action.target} failed: ${executionResult.error}`);
                         // Feed the error back so the LLM can self-heal or tell the user it failed
                         formattedMessages.push({ 
-                            role: 'user', 
-                            content: `[SYSTEM TOOL ERROR - ${action.target}]\n${executionResult.error}\n\nFix the issue and try again, or inform the user of the failure.` 
+                            role: 'tool', 
+                            name: action.target,
+                            content: `{"error": "${executionResult.error}"}` 
                         });
                     }
                 }
-            }
-            else {
+            } else {
                 // Fallback for unparseable output
                 finalReply = completion.content;
                 roleToSave = 'assistant';

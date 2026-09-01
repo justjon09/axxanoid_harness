@@ -8,7 +8,8 @@
     "read_file",
     "chat_search",
     "rag_search",
-    "rag_ingest"
+    "rag_ingest",
+    "get_agent_skills"
   ],
   "allowed_skills": [
     "triage_*",

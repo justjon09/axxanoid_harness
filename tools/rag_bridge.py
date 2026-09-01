@@ -12,7 +12,7 @@ os.makedirs(DB_DIR, exist_ok=True)
 
 # Disable ChromaDB telemetry to keep it 100% offline
 client = chromadb.PersistentClient(path=DB_DIR, settings=chromadb.Settings(anonymized_telemetry=False))
-LLAMA_URL = "http://127.0.0.1:8080/v1/embeddings"
+LLAMA_URL = "http://127.0.0.1:8081/v1/embeddings"
 
 def get_embedding(text):
     res = requests.post(

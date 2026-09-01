@@ -107,7 +107,7 @@ export async function autoTriageBlockedCards() {
             );
 
             broadcastUpdate('board_refresh', {});
-            
+
             console.log(`>>> [ORCHESTRATOR] Auto-Spawned Triage Task [${triageId}] for Blocked Card [${card.id}] assigned to [${tier1Agent.toUpperCase()}]`);
         }
     }
@@ -206,6 +206,17 @@ export async function processTask(task: WorkboardCard) {
     let taskCompleted = false;
     let lastResultPayload: any = null;
 
+    // The structural envelope for Workers
+    const grammarSchema = {
+        type: "object",
+        properties: {
+            type: { type: "string", enum: ["tool_call", "user_message"] },
+            target: { type: "string" },
+            payload: { type: "object" }
+        },
+        required: ["type", "target", "payload"]
+    };
+
     while (attempts < maxAttempts && !taskCompleted) {
         attempts++;
         console.log(`>>> [ORCHESTRATOR] Task [${task.id}] Execution Attempt ${attempts}/${maxAttempts}`);
@@ -214,10 +225,23 @@ export async function processTask(task: WorkboardCard) {
         try {
             // Format message include ONLY the activeTools to the LLM
             const formattedMessages = formatPromptForModel(conversationHistory, activeTools, promptFormat);
-            // Dispatch to Local Engine
-            const completion = await sendLlamaCompletion(formattedMessages, { model: modelAlias });
-            // Intercept & Parse Action
-            const action = parseAgentAction(completion.content);
+            
+            // Dispatch to Local Engine with JSON lock
+            const completion = await sendLlamaCompletion(formattedMessages, { 
+                model: modelAlias,
+                response_format: {
+                    type: "json_object",
+                    schema: grammarSchema
+                }
+            });
+
+            // Intercept & Parse Action - Bypass translator.ts entirely
+            let action;
+            try {
+                action = JSON.parse(completion.content || "{}");
+            } catch (e) {
+                action = { type: 'user_message', payload: { content: completion.content } };
+            }
 
             // PROSE REJECTION: Worker agents MUST invoke tools, not chat
             if (isWorker && action.type === 'user_message') {

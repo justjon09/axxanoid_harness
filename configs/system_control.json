@@ -9,7 +9,8 @@
     "workboard_mutate": true,
     "chat_search": true,
     "rag_search": true,
-    "rag_ingest": true
+    "rag_ingest": true,
+    "get_agent_skills": true
   },
   "skills": {
     "system_telemetry": true,
