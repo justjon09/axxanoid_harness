@@ -152,7 +152,8 @@ restRouter.post('/chat', async (req, res) => {
             }
         }
 
-        const systemInstruction = "You have full authorization to execute the provided tools. Output the required JSON tool_call to perform system actions.";
+        // const systemInstruction = "You have full authorization to execute the provided tools. Output the required JSON tool_call to perform system actions.";
+        const systemInstruction = "";
 
         // Fetch the last 15 messages for context
         const pastMessagesRaw = db.prepare(`
@@ -202,6 +203,10 @@ restRouter.post('/chat', async (req, res) => {
         while (totalSteps < hardCap && !requestResolved) {
             totalSteps++;
 
+            console.log(`\n=== DEBUG [STEP ${totalSteps}]: INBOUND PROMPT ===`);
+            console.log(JSON.stringify(formattedMessages[formattedMessages.length - 1], null, 2));
+
+
             // Dispatch with the hardware-level JSON lock
             const completion = await sendLlamaCompletion(formattedMessages, { 
                 model: modelAlias,
@@ -210,6 +215,9 @@ restRouter.post('/chat', async (req, res) => {
                     schema: grammarSchema
                 }
             });
+
+            console.log(`\n=== DEBUG [STEP ${totalSteps}]: RAW LLM OUTPUT ===`);
+            console.log(completion.content);
 
             // Because of the engine lock, JSON.parse is guaranteed to work
             let action;
@@ -272,6 +280,9 @@ restRouter.post('/chat', async (req, res) => {
                     // Push the LLM's tool call into the context
                     formattedMessages.push({ role: 'assistant', content: completion.content });
                     if (executionResult.success) {
+                        console.log(`\n=== DEBUG [STEP ${totalSteps}]: TOOL RETURN DATA ===`);
+                        console.log(executionResult.output);
+
                         broadcastUpdate('telemetry_log', `[SYSTEM] ${action.target} executed successfully.`);
                         broadcastUpdate('board_refresh', {});
 
