@@ -74,6 +74,14 @@ export function formatPromptForModel(
     const formattedMessages = [...messages];
     if (tools.length === 0) return formattedMessages;
 
+    const UnifiedToolSystemPrompt = 
+        `# Available Tools\n` +
+        JSON.stringify(tools, null, 2) +
+        `\n\n# Output Format Rules\n` +
+        `You must respond with a strictly formatted JSON object. Choose ONE of the following structures:\n` +
+        `1. To execute a tool: {"type": "tool_call", "target": "<tool_name>", "payload": {<arguments>}}\n` +
+        `2. To speak directly to the user: {"type": "user_message", "target": "chat", "payload": {"content": "<your reply here>"}}`;
+
     if (modelType === 'llama3_groq') {
        // Map our Harness tools to OpenAI style for the Groq prompt
         const groqTools = tools.map(t => ({
@@ -100,11 +108,7 @@ export function formatPromptForModel(
             formattedMessages.unshift({ role: 'system', content: toolSystemPrompt });
         }
     } else if (modelType === 'qwen_coder') {
-        const toolSystemPrompt = 
-            `# Execution Tools & Skills\n` +
-            JSON.stringify(tools, null, 2) +
-            `\n\nWhen executing, output your action strictly inside a markdown JSON block:\n` +
-            `\`\`\`json\n{"type": "tool_call", "target": "<tool_name>", "payload": {<arguments>}}\n\`\`\``;
+        const toolSystemPrompt = UnifiedToolSystemPrompt;
 
         if (formattedMessages.length > 0 && formattedMessages[0].role === 'system') {
             formattedMessages[0].content += `\n\n${toolSystemPrompt}`;

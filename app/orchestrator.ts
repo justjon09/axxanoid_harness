@@ -186,9 +186,10 @@ export async function processTask(task: WorkboardCard) {
         }
     }
     
-    const systemInstruction = isWorker 
-        ? "You MUST issue an actionable JSON tool_call to perform work. Do NOT respond with plain conversational prose or explanations."
-        : "You are the Chief of Staff interacting with the CEO. If a directive requires action, use your tools to manage the workboard. If it is a conversational question, reply directly to the CEO.";
+    const systemInstruction = "";
+    // const systemInstruction = isWorker 
+    //     ? "You MUST issue an actionable JSON tool_call to perform work. Do NOT respond with plain conversational prose or explanations."
+    //     : "You are the Chief of Staff interacting with the CEO. If a directive requires action, use your tools to manage the workboard. If it is a conversational question, reply directly to the CEO.";
 
     const conversationHistory: ChatMessage[] = [
         {

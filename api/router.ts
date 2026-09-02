@@ -288,17 +288,15 @@ restRouter.post('/chat', async (req, res) => {
 
                         // Feed the tool result back into the context so the LLM can read it
                         formattedMessages.push({ 
-                            role: 'tool', 
-                            name: action.target,
-                            content: executionResult.output
+                            role: 'user', 
+                            content: `[SYSTEM TOOL RESULT - ${action.target}]\n${executionResult.output}` 
                         });
                     } else {
                         broadcastUpdate('telemetry_log', `[ERROR] ${action.target} failed: ${executionResult.error}`);
                         // Feed the error back so the LLM can self-heal or tell the user it failed
                         formattedMessages.push({ 
-                            role: 'tool', 
-                            name: action.target,
-                            content: `{"error": "${executionResult.error}"}` 
+                            role: 'user', 
+                            content: `[SYSTEM TOOL ERROR - ${action.target}]\n${executionResult.error}` 
                         });
                     }
                 }
