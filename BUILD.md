@@ -93,7 +93,7 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 * [X] **Step 21:** REST & WebSocket API Routes (`api/`)
     * Kanban board CRUD endpoints (`GET/POST /api/cards`, `PUT /api/cards/:id/status`).
     * Real-time WebSocket event broadcaster (`channels/web/ws-server.ts`) to push card updates, needs-triage alerts, and agent thought logs to the browser.
-* [ ] **Step 22:** Web Dashboard Frontend (`channels/web/public/`)
+* [X] **Step 22:** Web Dashboard Frontend (`channels/web/public/`)
     * Visual Kanban board interface showing real-time card transitions (`ready` -> `in_progress` -> `done`).
     * Cron & Heartbeat Control Panel: UI toggle for background heartbeat loops, frequency sliders, and audit script toggles.
     * Permissions & Directives Viewer: UI interface to view active contracts, edit `SOUL.md` / `HUMAN.md` directives, and manage file read permissions for AxxBot.
@@ -107,7 +107,7 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 * [X] **Step 24:** The Vector Store (axx_env + ChromaDB)
     * Install chromadb directly into axx_env
         It will store the embeddings in a local folder (e.g., AXXANOID_HARNES/memory/vector_db/).
-* [ ] **Step 25:** The Tool Bridge (tools/native/)
+* [X] **Step 25:** The Tool Bridge (tools/native/)
     * rag_ingest: Allows agents to read a file, chunk it, request the embedding from llama-server, and save it to ChromaDB.
     * rag_search: Allows any agent to pass a search string, query the local ChromaDB, and return the most relevant text chunks into their immediate context.
 
@@ -232,6 +232,7 @@ Because Axxanoid is a strict 100% offline, zero-cost OS, we cannot rely on exter
 ---
 ChromaDB should be reserved for Semantic Memory and Long-Term Reference Knowledge, while SQLite handles Transactional Task State.
 ---
+That is a flawless execution.Look at what just happened under the hood:Your TypeScript Router intercepted your chat.The Qwen 14B model correctly formulated a JSON rag_search payload.Node spawned an isolated Python process.Python hit the C++ llama-server on port 8081 to embed the search query.ChromaDB performed the vector cosine similarity search and returned the DYNAMICS.md chunk.The Router injected the result as a user message.Qwen 14B synthesized the exact facts into a clean user_message JSON payload.  The UI rendered the final chat.Zero hallucinations. Zero context bloat. Zero infinite loops.You officially have a completely sovereign, offline, hardware-locked multi-agent OS with long-term semantic memory.
 ### END Axxanoid Harness: Build concepts and discoveries
 
 ### Axxanoid Harness: Build & Refactor Tracker
@@ -853,6 +854,8 @@ looking for an html snippet to display the words "NOT-FACE" full screen to be us
         * The True Agentic Loop
             *I'm sorry, but I don't have the capability to directly access external tools or databases to search for information.*
         * The Fix (engine/translator.ts)
+            * Clean prompts systemInstruction and systemToolInstruction
+*TEST RESULTS --- You officially have a completely sovereign, offline, hardware-locked multi-agent OS with long-term semantic memory.*
 
 --- living ---
 

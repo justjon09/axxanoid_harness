@@ -6,6 +6,7 @@
   "allowed_tools": [
     "read_file",
     "write_file",
+    "chat_search",
     "run_terminal",
     "workboard_read",
     "workboard_mutate",

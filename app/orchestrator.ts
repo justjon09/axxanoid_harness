@@ -334,10 +334,14 @@ export async function processTask(task: WorkboardCard) {
                     console.warn(`>>> [EXECUTION FAILED]: ${executionResult.error}`);
                     
                     // SELF-HEALING FEEDBACK: Push error back to LLM context
+                    // Keep System (0) and Task Definition (1), drop intermediate failed attempts.
+                    if (conversationHistory.length > 4) {
+                        conversationHistory.splice(2, conversationHistory.length - 4); 
+                    }
                     conversationHistory.push({ role: 'assistant', content: completion.content });
                     conversationHistory.push({
                         role: 'user',
-                        content: `TOOL EXECUTION ERROR (${action.target}): ${executionResult.error}\nFix the issue in your parameters/code and re-issue the tool_call.`
+                        content: `TOOL EXECUTION ERROR (${action.target}): ${executionResult.error}\nFix the issue in your parameters/code and re-issue the tool_call. Use 'chat_search' if you need to review earlier history.`
                     });
                 }
             } else {

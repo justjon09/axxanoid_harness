@@ -10,7 +10,8 @@
     "workboard_mutate",
     "workboard_create",
     "rag_search",
-    "rag_ingest"
+    "rag_ingest",
+    "chat_search"
   ],
   "allowed_skills": [
     "system_telemetry",
