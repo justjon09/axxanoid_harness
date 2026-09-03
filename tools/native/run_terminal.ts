@@ -30,21 +30,32 @@ export async function execute(payload: Record<string, any>): Promise<ToolResult>
     
     try {
         let commandToRun = payload.command;
-        const venvPython = path.resolve('axx_env/bin/python');
+        // const venvPython = path.resolve('axx_env/bin/python');
         
-        // Isolate python execution inside the axx_env sandbox
-        if (commandToRun.startsWith('python ') || commandToRun.startsWith('python3 ')) {
-            if (fs.existsSync(venvPython)) {
-                commandToRun = commandToRun.replace(/^python3?/, venvPython);
-            }
-        }
+        // // Isolate python execution inside the axx_env sandbox
+        // if (commandToRun.startsWith('python ') || commandToRun.startsWith('python3 ')) {
+        //     if (fs.existsSync(venvPython)) {
+        //         commandToRun = commandToRun.replace(/^python3?/, venvPython);
+        //     }
+        // }
+
+        // Define the absolute paths to your sandbox
+        const venvPath = path.resolve('axx_env');
+        const venvBin = path.join(venvPath, 'bin');
+
+        // Programmatically enforce the virtual environment
+        const env = { 
+            ...process.env, 
+            VIRTUAL_ENV: venvPath,
+            PATH: `${venvBin}:${process.env.PATH}` 
+        };
 
         const result = await new Promise<{stdout: string, stderr: string, code: number | null}>((resolve) => {
             let stdout = '';
             let stderr = '';
             
             // Use spawn with bash -c to handle pipes/redirects and prevent buffer limit crashes
-            const proc = spawn('bash', ['-c', commandToRun], { cwd: process.cwd() });
+            const proc = spawn('bash', ['-c', commandToRun], { cwd: process.cwd(), env });
             
             proc.stdout.on('data', (data) => stdout += data.toString());
             proc.stderr.on('data', (data) => stderr += data.toString());
