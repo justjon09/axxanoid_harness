@@ -114,17 +114,18 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
 ---
 
 ### Phase 8: Validation & End-to-End Factory Verification
-* [ ] **Step 26:** Full System Assembly & Playbook Finalization
+* [X] **Step 26:** Full System Assembly & Playbook Finalization
     * Multi-agent dependency chain test (AxxBot creates card -> Noid writes code -> ExecuBot executes -> AxxBot reports final output).
     * Lifecycle Integration Testing: Verify task flow from CLI input -> AxxBot decomposition -> Worker tool execution -> Card completion.
     * Path-to-Success Validation: Test hardware/out-of-scope requests to ensure zero impossibility rejections and proper blocked-state rerequisite card generation.
     * Self-Healing Loop Verification: Ensure non-zero exit codes from execute() trigger automatic retry and self-correction loops.
     * Verify zero-cost, 100% offline execution on Apple Silicon Metal.
-    * Update `END-TO-END.md` and `README.md` with final production commands.
 * [ ] **Step 27:** tool / skills audit 
 * [ ] **Step 28:** Grifts
 * [ ] **Step 29:** Refactor Heartbeat
-* [ ] **Step 30:** Create use instructions (how to add tool / skill / agent, cli commands)
+* [ ] **Step 30:** Documentation deep dive
+    * Create use instructions (how to add tool / skill / agent, cli commands)
+    * Update `END-TO-END.md` and `README.md` with final git pull to running AI.
 
 ## END Axxanoid Harness: Master Build Outline
 

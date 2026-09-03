@@ -86,7 +86,7 @@ export async function execute(payload: Record<string, any>): Promise<ToolResult>
 
         return {
             success: true,
-            output: `Successfully created card [${newCardId}] assigned to ${payload.assignee.toUpperCase()} with status: ${initialStatus}.`
+            output: `Successfully created card [${newCardId}] assigned to ${payload.assignee.toUpperCase()}.`
         };
     } catch (err: any) {
         return { success: false, output: '', error: err.message || String(err) };

@@ -71,7 +71,7 @@ export function formatPromptForModel(
     tools: HarnessToolDefinition[],
     modelType: 'llama3_groq' | 'qwen_coder'
 ): ChatMessage[] {
-    const formattedMessages = [...messages];
+    const formattedMessages = JSON.parse(JSON.stringify(messages)) as ChatMessage[];
     if (tools.length === 0) return formattedMessages;
 
     const UnifiedToolSystemPrompt = 

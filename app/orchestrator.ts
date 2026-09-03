@@ -61,6 +61,11 @@ export async function resolveDependencies() {
     // Find all 'blocked' cards
     const blockedCards = db.prepare(`SELECT * FROM workboard_cards WHERE status = 'blocked'`).all() as WorkboardCard[];
     for (const card of blockedCards) {
+        // Protect cards that were manually blocked by workers needing triage
+        if (card.result_payload && card.result_payload.includes('missing_need')) {
+            continue; 
+        }
+        
         // Check if there are any incomplete dependencies for this card
         const unresolvedDep = db.prepare(`
             SELECT cd.depends_on_id 

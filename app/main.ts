@@ -34,6 +34,7 @@ app.use('/api', restRouter);
 
 let heartbeatInterval: NodeJS.Timeout;
 let orchestratorInterval: NodeJS.Timeout;
+let isOrchestratorRunning = false;
 
 const startBackgroundLoops = () => {
     console.log(">>> [SYSTEM] Initializing background heartbeat (15m pulse)...");
@@ -44,7 +45,14 @@ const startBackgroundLoops = () => {
 
     console.log(">>> [SYSTEM] Initializing Workboard Orchestrator (5s pulse)...");
     orchestratorInterval = setInterval(async () => {
-        await runOrchestratorPulse();
+        if (isOrchestratorRunning) return; // Prevent overlapping pulses
+
+        isOrchestratorRunning = true;
+        try {
+            await runOrchestratorPulse();
+        } finally {
+            isOrchestratorRunning = false;
+        }
     }, 5000);
 };
 
@@ -54,7 +62,7 @@ async function bootHarness() {
         // 1. Initialize SQLite Schemas (Synchronous and Decoupled)
         initWorkboardSchema();
         initChatSchema(); 
-        
+
         // 2. Dynamically Load Tool Modules (Asynchronous)
         await initializeToolEngine();
 
