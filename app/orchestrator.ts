@@ -20,6 +20,7 @@ export interface WorkboardCard {
     status: 'ready' | 'in_progress' | 'blocked' | 'done' | 'failed';
     parent_id: string | null;
     result_payload: string | null;
+    inherited_parent_result: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -71,14 +72,24 @@ export async function resolveDependencies() {
 
         // If no incomplete dependencies remain, unblock the card
         if (!unresolvedDep) {
+            // THE BATON PASS: Fetch the result payload from the parent task
+            const parentResults = db.prepare(`
+                SELECT wc.result_payload 
+                FROM card_dependencies cd
+                JOIN workboard_cards wc ON cd.depends_on_id = wc.id
+                WHERE cd.card_id = ?
+            `).all(card.id) as any[];
+
+            // Combine payloads if there are multiple dependencies
+            const inheritedPayload = parentResults.map(p => p.result_payload).join('\n\n');
+
             db.prepare(`
                 UPDATE workboard_cards 
-                SET status = 'ready', updated_at = CURRENT_TIMESTAMP 
+                SET status = 'ready', inherited_parent_result = ?, updated_at = CURRENT_TIMESTAMP 
                 WHERE id = ?
-            `).run(card.id);
+            `).run(inheritedPayload || null, card.id);
 
-            broadcastUpdate('board_refresh', {});
-            
+            broadcastUpdate('board_refresh', {});            
             console.log(`>>> [ORCHESTRATOR] Unblocked card "${card.title}" (${card.id}) -> Promoted to READY`);
         }
     }
@@ -186,19 +197,28 @@ export async function processTask(task: WorkboardCard) {
         }
     }
     
-    const systemInstruction = "";
-    // const systemInstruction = isWorker 
-    //     ? "You MUST issue an actionable JSON tool_call to perform work. Do NOT respond with plain conversational prose or explanations."
-    //     : "You are the Chief of Staff interacting with the CEO. If a directive requires action, use your tools to manage the workboard. If it is a conversational question, reply directly to the CEO.";
+    // Formalize the assignment as a strict JSON object pulled directly from the DB
+    let parsedInheritance = null;
+    if (task.inherited_parent_result) {
+        try { parsedInheritance = JSON.parse(task.inherited_parent_result); } 
+        catch { parsedInheritance = task.inherited_parent_result; }
+    }
+
+    const taskAssignment = {
+        task_id: task.id,
+        title: task.title,
+        description: task.description,
+        inherited_parent_result: parsedInheritance
+    };
 
     const conversationHistory: ChatMessage[] = [
         {
             role: 'system',
-            content: `${agentSoul}\n\n${systemInstruction}${skillContext}`
+            content: `${agentSoul}\n\n${skillContext}`
         },
         {
             role: 'user',
-            content: `Task: ${task.title}\nDetails: ${task.description || 'None'}`
+            content: `Workboard Task:\n${JSON.stringify(taskAssignment, null, 2)}`
         }
     ];
 
@@ -380,8 +400,15 @@ export async function processTask(task: WorkboardCard) {
     ).run(finalStatus, JSON.stringify(lastResultPayload, null, 2), task.id);
 
     broadcastUpdate('board_refresh', {});
-
     console.log(`>>> [ORCHESTRATOR] Task [${task.id}] Finalized -> STATUS: ${finalStatus.toUpperCase()}`);
+
+    // --- LOOP CLOSURE: Broadcast completion to Chat Feed ---
+    if (isWorker && (finalStatus === 'done' || finalStatus === 'failed')) {
+        const sysMessage = `[SYSTEM WORKBOARD UPDATE] Task '${task.title}' assigned to ${task.assignee.toUpperCase()} has reached status: ${finalStatus.toUpperCase()}.\nResult: ${JSON.stringify(lastResultPayload)}`;
+        
+        db.prepare(`INSERT INTO chat_history (role, content) VALUES ('system', ?)`).run(sysMessage);
+        broadcastUpdate('chat_msg', { sender: 'SYSTEM', message: `Task '${task.title}' marked ${finalStatus.toUpperCase()}` });
+    }
 }
 
 /**

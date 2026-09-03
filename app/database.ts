@@ -19,10 +19,11 @@ export function initWorkboardSchema() {
             id TEXT PRIMARY KEY,
             title TEXT NOT NULL,
             description TEXT,
-            assignee TEXT NOT NULL, -- 'noid', 'execubot', 'dobot', 'pubbot'
-            status TEXT NOT NULL DEFAULT 'ready', -- 'ready', 'in_progress', 'blocked', 'done', 'failed'
+            assignee TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'ready',
             parent_id TEXT,
             result_payload TEXT,
+            inherited_parent_result TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (parent_id) REFERENCES workboard_cards(id) ON DELETE SET NULL

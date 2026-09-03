@@ -855,7 +855,8 @@ looking for an html snippet to display the words "NOT-FACE" full screen to be us
             *I'm sorry, but I don't have the capability to directly access external tools or databases to search for information.*
         * The Fix (engine/translator.ts)
             * Clean prompts systemInstruction and systemToolInstruction
-*TEST RESULTS --- You officially have a completely sovereign, offline, hardware-locked multi-agent OS with long-term semantic memory.*
+            *TEST RESULTS --- You officially have a completely sovereign, offline, hardware-locked multi-agent OS with long-term semantic memory.*
+        * The Orchestrator Baton Pass (app/orchestrator.ts)
 
 --- living ---
 
