@@ -120,9 +120,9 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
     * Path-to-Success Validation: Test hardware/out-of-scope requests to ensure zero impossibility rejections and proper blocked-state rerequisite card generation.
     * Self-Healing Loop Verification: Ensure non-zero exit codes from execute() trigger automatic retry and self-correction loops.
     * Verify zero-cost, 100% offline execution on Apple Silicon Metal.
-* [ ] **Step 27:** tool / skills audit 
+* [X] **Step 27:** tool / skills audit 
 * [ ] **Step 28:** Grifts
-* [ ] **Step 29:** Refactor Heartbeat
+* [X] **Step 29:** Refactor Heartbeat
 * [ ] **Step 30:** Documentation deep dive
     * Create use instructions (how to add tool / skill / agent, cli commands)
     * Update `END-TO-END.md` and `README.md` with final git pull to running AI.

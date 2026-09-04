@@ -46,4 +46,5 @@ export { workboardPause } from './workboard_pause.ts';
 export { workboardResume } from './workboard_resume.ts';
 export { agentCreate } from './agent_create.ts';
 export { incorpTool } from './incorp_tool.ts';
-export { memoryRebuild } from './memory_rebuild.ts'
+export { memoryRebuild } from './memory_rebuild.ts';
+export { systemAudit } from './system_audit.ts';

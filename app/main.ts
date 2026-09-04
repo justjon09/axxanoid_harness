@@ -9,6 +9,7 @@ import { restRouter } from '../api/router.ts';
 import { initWebSocketServer } from '../channels/web/ws-server.ts';
 import { initializeSkillEngine } from '../skills/index.ts';
 import { initializeToolEngine } from '../tools/index.ts';
+import { syncCrons } from '../channels/cron/manager.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,17 +60,20 @@ const startBackgroundLoops = () => {
 // --- MASTER BOOT SEQUENCE ---
 async function bootHarness() {
     try {
-        // 1. Initialize SQLite Schemas (Synchronous and Decoupled)
+        // Initialize SQLite Schemas (Synchronous and Decoupled)
         initWorkboardSchema();
-        initChatSchema(); 
+        initChatSchema();
 
-        // 2. Dynamically Load Tool Modules (Asynchronous)
+        // Dynamically Load Tool Modules (Asynchronous)
         await initializeToolEngine();
 
-        // 2b. Dynamically Load Skill Playbooks
+        // Dynamically Load Skill Playbooks
         await initializeSkillEngine();
 
-        // 3. Initialize the master application
+        // Initialize Crons and Controler
+        syncCrons();
+
+        // Initialize the master application
         const server = app.listen(PORT, () => {
             console.log(`>>> Booting Axxanoid Harness ....`);
             console.log(`>>> API Listening on http://127.0.0.1:${PORT}`);

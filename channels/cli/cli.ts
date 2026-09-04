@@ -6,7 +6,8 @@ import {
     incorpTool,
     memoryRebuild,
     systemSwitch,
-    workboardResume
+    workboardResume,
+    systemAudit
 } from './assets/commands/index.ts';
 
 const args = process.argv.slice(2);
@@ -19,6 +20,7 @@ Axxanoid OS - CEO CLI
 Kanban Controls:
   add "Task"                - Inject a new top-level task for the Chief of Staff
   status                    - View the current Kanban board state
+  audit                     - Audit agent configs against physical tools and skills
   logs [agent]              - View the latest execution payloads
 
 System Controls:
@@ -80,6 +82,10 @@ async function runCLI() {
             }
             break;
         } 
+        case 'audit': {
+            await systemAudit();
+            break;
+        }
         default:
             console.log(`>>> [CLI] Unknown command: ${command}`);
     }

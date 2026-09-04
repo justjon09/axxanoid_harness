@@ -77,6 +77,19 @@
         </div>
     </div>
 
+    <!-- System Controls Modal -->
+    <div id="settings-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:200; justify-content:center; align-items:center;">
+        <div style="background:var(--bg-panel); width:600px; border:1px solid var(--border-color); border-radius:8px; display:flex; flex-direction:column;">
+            <div style="padding:15px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0; color:var(--accent-blue);">System Controls & Crons</h3>
+                <button class="btn" onclick="document.getElementById('settings-overlay').style.display='none'">Close</button>
+            </div>
+            <div id="settings-body" style="padding:20px; overflow-y:auto; max-height:60vh;">
+                <!-- Cron toggles inject here -->
+            </div>
+        </div>
+    </div>
+
     <script src="assets/app.js"></script>
 </body>
 </html>

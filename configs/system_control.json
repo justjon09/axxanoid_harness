@@ -15,5 +15,13 @@
   "skills": {
     "system_telemetry": true,
     "memory_retrieval": true
+  },
+  "crons": {
+    "as_directory_pipeline": {
+      "enabled": false,
+      "script": "scripts/crons/as/directory_pipeline/master_cron.py",
+      "interval_ms": 21600000,
+      "description": "Runs the full 6-step directory scraping and outreach pipeline every 6 hours."
+    }
   }
 }

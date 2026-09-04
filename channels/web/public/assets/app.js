@@ -8,9 +8,14 @@ const btnPause = document.getElementById('btn-pause');
 const overlay = document.getElementById('overlay');
 const modalTitle = document.getElementById('modal-title');
 const modalBody = document.getElementById('modal-body');
+const btnSettings = document.getElementById('btn-settings');
+const settingsOverlay = document.getElementById('settings-overlay');
+const settingsBody = document.getElementById('settings-body');
 
 let isSystemPaused = false;
 let globalCards = []; // Store state for modal viewing
+
+btnSettings.removeAttribute('disabled');
 
 // --- WebSocket Management ---
 const connectWebSocket = () => {
@@ -241,6 +246,50 @@ overlay.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && overlay.style.display === 'flex') closeModal();
 });
+
+btnSettings.addEventListener('click', async () => {
+    settingsOverlay.style.display = 'flex';
+    settingsBody.innerHTML = '<p>Loading system crons...</p>';
+    
+    try {
+        const res = await fetch('/api/crons');
+        const json = await res.json();
+        
+        let html = '';
+        for (const [id, data] of Object.entries(json.data)) {
+            const isChecked = data.enabled ? 'checked' : '';
+            html += `
+                <div class="cron-row">
+                    <div class="cron-info">
+                        <h4>${id}</h4>
+                        <p>${data.description}</p>
+                        <p style="margin-top:4px; color:var(--accent-orange);">Interval: ${data.interval_ms / 60000} mins</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" ${isChecked} onchange="toggleCron('${id}', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            `;
+        }
+        settingsBody.innerHTML = html || '<p>No crons configured.</p>';
+    } catch (e) {
+        settingsBody.innerHTML = `<p style="color:red">Error loading crons: ${e.message}</p>`;
+    }
+});
+
+// Attach function to global window scope so the inline HTML onchange handler can see it
+window.toggleCron = async function(id, enabled) {
+    try {
+        await fetch(`/api/crons/${id}/toggle`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled })
+        });
+    } catch (e) {
+        console.error("Failed to toggle cron", e);
+    }
+};
 
 // --- Boot ---
 connectWebSocket();

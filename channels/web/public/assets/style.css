@@ -249,3 +249,14 @@ header h1 { margin: 0; font-size: 16px; letter-spacing: 1px; color: var(--accent
     flex: 1;
 }
 pre { background: var(--bg-base); padding: 15px; border-radius: 4px; overflow-x: auto; border: 1px solid var(--border-color); }
+
+/* Toggle Switch UI */
+.cron-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 10px; }
+.cron-info h4 { margin: 0 0 5px 0; font-size: 14px; color: var(--text-main); }
+.cron-info p { margin: 0; font-size: 11px; color: var(--text-muted); }
+.switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .2s; border-radius: 20px; }
+.slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%; }
+input:checked + .slider { background-color: var(--accent-green); }
+input:checked + .slider:before { transform: translateX(20px); }
