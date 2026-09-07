@@ -15,7 +15,8 @@
   },
   "skills": {
     "system_telemetry": true,
-    "memory_retrieval": true
+    "memory_retrieval": true,
+    "bounty_hunter": true
   },
   "crons": {
     "as_directory_pipeline": {

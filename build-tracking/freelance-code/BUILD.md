@@ -67,7 +67,13 @@ To bring this online, we need to inject three new files into your framework:
 2. Give ExecuBot the Keys
 - "run_docker_terminal": true (configs/system_control.json)
 - "run_docker_terminal" (agents/execubot/config.json)
+*- Verification NOT DONE*
+3. Build the Bounty Hunter Skill
+- skills/custom/bounty_hunter.md
+4. Give AxxBot the Keys
+- "bounty_hunter": true (configs/system_control.json)
+- "bounty_hunter" (agents/axxbot/config.json)
+*-The Domino Effect in Action NOT TESTED*
 
-
-- Active focus: Ensure you actually have Docker Desktop or the Docker daemon running on your Mac:
+# Active focus: Ensure you actually have Docker Desktop or the Docker daemon running
 
