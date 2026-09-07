@@ -10,6 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const BASE_DIR = path.resolve(__dirname, '..');
 const CONFIG_DIR = path.join(BASE_DIR, 'configs');
+const PAUSE_FILE = path.resolve(BASE_DIR, '.PAUSED');
 
 function loadDirective(filename: string): string {
     const filepath = path.join(CONFIG_DIR, filename);
@@ -44,6 +45,11 @@ function parseHeartbeatConfig(mdContent: string) {
 }
 
 export async function runHeartbeat() {
+    // Respect UI Pause State
+    if (fs.existsSync(PAUSE_FILE)) {
+        console.log(">>> [HEARTBEAT] System is PAUSED. Skipping health audits.");
+        return;
+    }
     try {
         console.log(">>> [HEARTBEAT] Running System Health Audits...");
         broadcastUpdate('telemetry_log', '[HEARTBEAT] Running system health audits...');

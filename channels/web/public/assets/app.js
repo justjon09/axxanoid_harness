@@ -254,10 +254,11 @@ btnSettings.addEventListener('click', async () => {
     try {
         const res = await fetch('/api/crons');
         const json = await res.json();
-        
+
         let html = '';
         for (const [id, data] of Object.entries(json.data)) {
             const isChecked = data.enabled ? 'checked' : '';
+            const isDebugChecked = data.debug ? 'checked' : '';
             html += `
                 <div class="cron-row">
                     <div class="cron-info">
@@ -265,10 +266,23 @@ btnSettings.addEventListener('click', async () => {
                         <p>${data.description}</p>
                         <p style="margin-top:4px; color:var(--accent-orange);">Interval: ${data.interval_ms / 60000} mins</p>
                     </div>
-                    <label class="switch">
-                        <input type="checkbox" ${isChecked} onchange="toggleCron('${id}', this.checked)">
-                        <span class="slider"></span>
-                    </label>
+                    <div style="display:flex; flex-direction:column; gap: 10px; align-items: flex-end;">
+                        <button class="btn" onclick="runCronNow('${id}')">Run Now</button>
+                        <div style="display:flex; align-items:center; gap: 10px;">
+                            <span style="font-size:10px; color:var(--text-muted);">ACTIVE</span>
+                            <label class="switch">
+                                <input type="checkbox" ${isChecked} onchange="toggleCron('${id}', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div style="display:flex; align-items:center; gap: 10px;">
+                            <span style="font-size:10px; color:var(--text-muted);">DEBUG</span>
+                            <label class="switch">
+                                <input type="checkbox" ${isDebugChecked} onchange="toggleCronDebug('${id}', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             `;
         }
@@ -278,7 +292,6 @@ btnSettings.addEventListener('click', async () => {
     }
 });
 
-// Attach function to global window scope so the inline HTML onchange handler can see it
 window.toggleCron = async function(id, enabled) {
     try {
         await fetch(`/api/crons/${id}/toggle`, {
@@ -288,6 +301,27 @@ window.toggleCron = async function(id, enabled) {
         });
     } catch (e) {
         console.error("Failed to toggle cron", e);
+    }
+};
+
+window.runCronNow = async function(id) {
+    try {
+        appendTerminal(`Manual trigger sent for ${id}...`, 'system');
+        await fetch(`/api/crons/${id}/run`, { method: 'POST' });
+    } catch (e) {
+        console.error("Failed to run cron", e);
+    }
+};
+
+window.toggleCronDebug = async function(id, debug) {
+    try {
+        await fetch(`/api/crons/${id}/debug`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ debug })
+        });
+    } catch (e) {
+        console.error("Failed to toggle cron debug", e);
     }
 };
 

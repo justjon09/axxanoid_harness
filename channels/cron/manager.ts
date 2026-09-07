@@ -20,14 +20,15 @@ export function syncCrons() {
         }
 
         if (data.enabled) {
-            const timer = setInterval(() => runCronScript(cronId, data.script), data.interval_ms);
+            // Pass data.debug dynamically into the script runner
+            const timer = setInterval(() => runCronScript(cronId, data.script, data.debug), data.interval_ms);
             activeIntervals.set(cronId, timer);
             console.log(`>>> [CRON] Mounted and active: ${cronId} (${data.interval_ms}ms)`);
         }
     }
 }
 
-async function runCronScript(cronId: string, scriptPath: string) {
+async function runCronScript(cronId: string, scriptPath: string, debugMode: boolean = false) {
     const absolutePath = path.resolve(process.cwd(), scriptPath);
     const pythonExec = path.resolve(process.cwd(), 'axx_env/bin/python');
 
@@ -40,9 +41,36 @@ async function runCronScript(cronId: string, scriptPath: string) {
 
     // Spawn completely detached from the Node event loop
     const child = spawn(pythonExec, [absolutePath], { 
-        detached: true, 
-        stdio: 'ignore',
+        detached: true,
         cwd: path.dirname(absolutePath)
     });
+
+    child.stdout.on('data', (data) => {
+        const out = data.toString().trim();
+        if (out) {
+            console.log(`[${cronId}] ${out}`);
+            if (debugMode) broadcastUpdate('telemetry_log', `[${cronId}] ${out}`);
+        }
+    });
+
+    child.stderr.on('data', (data) => {
+        const errOut = data.toString().trim();
+        if (errOut) {
+            console.error(`[${cronId} ERROR] ${errOut}`);
+            if (debugMode) broadcastUpdate('telemetry_log', `[${cronId} ERROR] ${errOut}`);
+        }
+    });
+
     child.unref(); 
+}
+
+export async function forceRunCron(cronId: string) {
+    if (!fs.existsSync(CONTROL_FILE)) return false;
+    
+    const config = JSON.parse(fs.readFileSync(CONTROL_FILE, 'utf-8'));
+    if (config.crons && config.crons[cronId]) {
+        await runCronScript(cronId, config.crons[cronId].script, config.crons[cronId].debug);
+        return true;
+    }
+    return false;
 }

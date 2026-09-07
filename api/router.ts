@@ -8,7 +8,7 @@ import { broadcastUpdate } from '../channels/web/ws-server.ts';
 import { sendLlamaCompletion, ChatMessage } from '../engine/llama-client.ts';
 import { formatPromptForModel, parseAgentAction, HarnessToolDefinition } from '../engine/translator.ts';
 import { ToolRegistry, executeTool } from '../tools/index.ts';
-import { syncCrons } from '../channels/cron/manager.ts';
+import { syncCrons, forceRunCron } from '../channels/cron/manager.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -380,6 +380,43 @@ restRouter.post('/crons/:id/toggle', (req, res) => {
         
         syncCrons(); // Hot reload backend timers
         broadcastUpdate('telemetry_log', `[SYSTEM] Cron '${id}' toggled ${enabled ? 'ON' : 'OFF'}.`);
+        res.json({ success: true });
+    } catch (err: any) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+restRouter.post('/crons/:id/run', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const success = await forceRunCron(id);
+        
+        if (success) {
+            broadcastUpdate('telemetry_log', `[SYSTEM] Manual trigger for cron '${id}' initiated by CEO.`);
+            res.json({ success: true, message: `Cron ${id} triggered.` });
+        } else {
+            res.status(404).json({ success: false, message: "Cron ID not found" });
+        }
+    } catch (err: any) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+restRouter.post('/crons/:id/debug', (req, res) => {
+    try {
+        const { id } = req.params;
+        const { debug } = req.body;
+        const config = JSON.parse(fs.readFileSync(CONTROL_FILE, 'utf-8'));
+        
+        if (!config.crons || !config.crons[id]) {
+            return res.status(404).json({ success: false, message: "Cron ID not found" });
+        }
+
+        config.crons[id].debug = debug;
+        fs.writeFileSync(CONTROL_FILE, JSON.stringify(config, null, 2));
+        
+        syncCrons(); // Hot reload backend timers to capture the new setting
+        broadcastUpdate('telemetry_log', `[SYSTEM] Cron '${id}' UI Debug mode toggled ${debug ? 'ON' : 'OFF'}.`);
         res.json({ success: true });
     } catch (err: any) {
         res.status(500).json({ success: false, error: err.message });

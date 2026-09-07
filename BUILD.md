@@ -121,7 +121,7 @@ Architectural Rationale: Transition from hardcoded logic, duplicate schema decla
     * Self-Healing Loop Verification: Ensure non-zero exit codes from execute() trigger automatic retry and self-correction loops.
     * Verify zero-cost, 100% offline execution on Apple Silicon Metal.
 * [X] **Step 27:** tool / skills audit 
-* [ ] **Step 28:** Grifts
+* [X] **Step 28:** Grifts
 * [X] **Step 29:** Refactor Heartbeat
 * [ ] **Step 30:** Documentation deep dive
     * Create use instructions (how to add tool / skill / agent, cli commands)
