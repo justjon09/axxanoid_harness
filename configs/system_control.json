@@ -10,7 +10,8 @@
     "chat_search": true,
     "rag_search": true,
     "rag_ingest": true,
-    "get_agent_skills": true
+    "get_agent_skills": true,
+    "run_docker_terminal": true
   },
   "skills": {
     "system_telemetry": true,
@@ -22,7 +23,7 @@
       "script": "scripts/crons/as/directory_pipeline/master_cron.py",
       "interval_ms": 21600000,
       "description": "Runs the full 6-step directory scraping and outreach pipeline every 6 hours.",
-      "debug": true
+      "debug": false
     }
   }
 }

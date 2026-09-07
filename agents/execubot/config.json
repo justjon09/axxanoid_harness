@@ -12,7 +12,8 @@
     "workboard_mutate",
     "workboard_create",
     "rag_search",
-    "rag_ingest"
+    "rag_ingest",
+    "run_docker_terminal"
   ],
   "allowed_skills": [
     "sandbox_execution", 
