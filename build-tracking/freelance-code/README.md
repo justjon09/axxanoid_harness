@@ -10,9 +10,3 @@
 ## Core Capabilities
 
 ## The Workforce
-
----
-
-## Operating Instructions
-
-
