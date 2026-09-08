@@ -1,6 +1,97 @@
-# FREELANCE CODE Human in the Loop Build and Instructions
+# FREELANCE CODE - Master Build & Operational Blueprint
 
-# FREELANCE CODE - Project Overview 
+## 1. Project Overview & Architecture
+The Freelance Code subsystem converts Axxanoid OS into an autonomous, human-in-the-loop developer bounty factory.
+
+[Target GitHub Issue / URL]
+│
+▼
+┌─────────────────────────────────────────────────────────┐
+│ Phase 1: Environment Setup (ExecuBot - run_terminal)    │
+│ Clones repo & creates working git branch                │
+└──────────────────────────┬──────────────────────────────┘
+│
+▼
+┌─────────────────────────────────────────────────────────┐
+│ Phase 2: Patch Generation (Noid - write_file/read_file) │
+│ Analyzes codebase & writes fix                          │
+└──────────────────────────┬──────────────────────────────┘
+│
+▼
+┌─────────────────────────────────────────────────────────┐
+│ Phase 3: Isolated CI Test (ExecuBot - Docker Runner)    │
+│ Runs tests inside container (node:20, python:3.11, etc) │
+└──────────────────────────┬──────────────────────────────┘
+│
+▼
+┌─────────────────────────────────────────────────────────┐
+│ Phase 4: Human QA Gate (AxxBot - Pauses Pipeline)       │
+│ CEO inspects git diff (CLI/UI) & grants approval        │
+└──────────────────────────┬──────────────────────────────┘
+│
+▼
+┌─────────────────────────────────────────────────────────┐
+│ Phase 5: PR Submission & Payout (ExecuBot - gh CLI)     │
+│ Commits, pushes branch, opens PR -> Payout triggered    │
+└─────────────────────────────────────────────────────────┘
+
+---
+
+## 2. Target Selection Walkthrough
+### Base Rules
+* **Deterministic Verification:** Only accept issues with existing, passing CI/CD suites. The agent requires an objective mathematical pass/fail signal.
+* **Scope Discipline:** Focus exclusively on labels: `bug`, `refactor`, `type-fix`, or `test-coverage`.
+* **Zero UI/UX Inventions:** Reject requests for "New UI designs," "Add dashboard," or ambiguous feature prompts.
+
+### Profit Rules
+* **Bounty Range:** Target tasks valued between **$50 and $500**.
+* **Freshness Filter:** Only take issues created or funded within the last 14 days. Avoid stale, abandoned repositories.
+* **Maintainer Responsiveness:** Verify the repo has merged PRs within the last 30 days.
+
+### Complexity Guidelines
+* **File Limit:** Prefer issues touching $\le 5$ source files.
+* **Language Match:** 
+  * TypeScript / JavaScript (`node:20`)
+  * Python (`python:3.11`)
+  * Go (`golang:latest`)
+  * Rust (`rust:latest`)
+
+### The Pre-Flight Double Check
+Before issuing a bounty prompt to AxxBot:
+1. Verify Docker Desktop / daemon is active on the host Mac (`docker ps`).
+2. Run `npm run axx -- audit` to verify all tool/skill dependencies are green.
+3. Ensure GitHub CLI (`gh`) is authenticated on the host (`gh auth status`).
+
+---
+
+## 3. Getting Paid: Step-by-Step Payout Pipeline
+1. **Platform Onboarding:** Link your GitHub profile to **Algora**, **Opire**, or **Boss.dev** and complete Stripe Connect identity verification.
+2. **Execution & PR:** Axxanoid OS solves the issue and submits the PR via `gh pr create --body "Closes #issue"`.
+3. **Merge Event:** Maintainer reviews and merges the PR. The platform bot automatically detects the merge and releases escrow.
+4. **Stripe Settlement:** 
+   * **First Payout:** Stripe enforces a 7-day security holding period for new Connect accounts.
+   * **Ongoing:** Funds auto-transfer to your checking account on a 1–2 business day rolling schedule.
+
+---
+
+## 4. Human QA & UI Review Gate
+
+When Phase 4 is reached, AxxBot halts the card chain. Inspect the patch before authorizing Phase 5:
+
+* **Option A (CLI):**
+  ```bash
+  cd agents/execubot/WORKSPACE/<repo_dir>
+  git diff main..HEAD
+
+* **Option B (Web Dashboard):**
+- Open http://127.0.0.1:8000, click the Phase 4 card on the Kanban board, and inspect the result_payload.
+
+If approved, issue the command in chat:
+- "AxxBot, approve Phase 5 for card [card-id]. Submit the PR."
+
+---
+
+
 1. Mapping the Bounty Pipeline
 Instead of a single bot trying to juggle context, your specialized agents handle the lifecycle asynchronously:
 - Ingestion: You paste the GitHub issue URL into the Command Center; AxxBot reads it and spawns the sub-tasks.
@@ -47,19 +138,9 @@ To bring this online, we need to inject three new files into your framework:
 - skills/custom/docker_ci_runner.md: The playbook instructing ExecuBot to strictly use the Docker tool for third-party execution.
 
 
-# FREELANCE CODE - BUILD PLAN
-(Note: Ensure you actually have Docker Desktop or the Docker daemon running on your Mac before ExecuBot tries to use this tool, otherwise the spawn command will throw a "docker not found" or "daemon not running" error).
-- UI integration ? (see diff or use ide)
-- Tools
-- Skills
-- Integrations
-# FREELANCE CODE - TARGET SELECTION WALKTHRU
-- base rules
-- profit rules
-- comlexity guidelines
-- the double check
-# FREELANCE CODE - GIT PAID 
-- From selection to money step by step
+
+
+
 
 # FREELANCE CODE - BUILD PROCESS (LIVE)
 1. Build the Docker Terminal Tool
@@ -74,6 +155,16 @@ To bring this online, we need to inject three new files into your framework:
 - "bounty_hunter": true (configs/system_control.json)
 - "bounty_hunter" (agents/axxbot/config.json)
 *-The Domino Effect in Action NOT TESTED*
+5. Build the Docker CI Runner Skill
+- skills/custom/docker_ci_runner.md
+6. Give ExecuBot the Keys
+- "docker_ci_runner": true (configs/system_control.json)
+- "docker_ci_runner" (agents/execubot/config.json)
+7. Documentation
+- build-tracking/freelance-code/BUILD.md
+- build-tracking/freelance-code/README.md
+- build-tracking/freelance-code/END-TO-END.md
+
 
 # Active focus: Ensure you actually have Docker Desktop or the Docker daemon running
 
