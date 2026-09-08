@@ -17,6 +17,7 @@
   ],
   "allowed_skills": [
     "sandbox_execution", 
-    "test_runner"
+    "test_runner",
+    "docker_ci_runner"
   ]
 }

@@ -16,7 +16,8 @@
   "skills": {
     "system_telemetry": true,
     "memory_retrieval": true,
-    "bounty_hunter": true
+    "bounty_hunter": true,
+    "docker_ci_runner": true
   },
   "crons": {
     "as_directory_pipeline": {
