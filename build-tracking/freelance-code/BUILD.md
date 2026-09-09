@@ -142,7 +142,7 @@ To bring this online, we need to inject three new files into your framework:
 
 
 
-# FREELANCE CODE - BUILD PROCESS (LIVE)
+## FREELANCE CODE - BUILD PROCESS (LIVE)
 1. Build the Docker Terminal Tool
 - tools/custom/run_docker_terminal.ts
 2. Give ExecuBot the Keys
@@ -166,5 +166,29 @@ To bring this online, we need to inject three new files into your framework:
 - build-tracking/freelance-code/END-TO-END.md
 
 
-# Active focus: Ensure you actually have Docker Desktop or the Docker daemon running
+## FREELANCE CODE - Initial Run (LIVE)
+1. **Host Environment Verification**
+    - Verify Docker is awake: Running mac native docker desktop
+        verifed: % docker ps
+            CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+    - Verify GitHub CLI is authenticated
+        verified: % gh auth status
+            github.com
+            ✓ Logged in to github.com account
+2. **The Dry Run Execution**
+    - Terminal 1:
+        ./engine/start-engine.sh 
+            ("listening on http://127.0.0.1:8080").
+    - Terminal 2:
+        npm run dev
+            >>> Booting Axxanoid Harness ....
+            >>> API Listening on http://127.0.0.1:8000
+            >>> [WEBSOCKET] Server initialized and attached to Express.
+3. **Command the Chief of Staff**
+    - CEO Dashboard input:
+        "AxxBot, initiate bounty hunter protocol for issue #1 at https://github.com/expressjs/express. The issue states we need to update the readme file."
 
+## FULL BREAK single tool then stopped - no response in chat -- fail
+1. Fix the Execution Gate (app/orchestrator.ts)
+    ONLY kill the execution loop if the agent explicitly mutated its own card to an end state
+        why do we even need taskComplete var ? 

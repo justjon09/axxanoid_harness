@@ -7,6 +7,7 @@ import { db } from '../app/database.ts';
 import { broadcastUpdate } from '../channels/web/ws-server.ts';
 import { sendLlamaCompletion, ChatMessage } from '../engine/llama-client.ts';
 import { formatPromptForModel, parseAgentAction, HarnessToolDefinition } from '../engine/translator.ts';
+import { SkillRegistry } from '../skills/index.ts';
 import { ToolRegistry, executeTool } from '../tools/index.ts';
 import { syncCrons, forceRunCron } from '../channels/cron/manager.ts';
 
@@ -123,6 +124,7 @@ restRouter.post('/chat', async (req, res) => {
         const soulPath = path.join(agentDir, 'SOUL.md');
         const identityPath = path.join(agentDir, 'IDENTITY.md');
 
+        let allowedSkillsList: string[] = [];
         let allowedToolsList: string[] = [];
         let agentSoul = '';
         let agentIdentity = '';
@@ -132,6 +134,7 @@ restRouter.post('/chat', async (req, res) => {
         if (fs.existsSync(configPath)) {
             const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
             allowedToolsList = config.allowed_tools || [];
+            allowedSkillsList = config.allowed_skills || [];
             if (config.assigned_model) {
                 modelAlias = config.assigned_model;
                 promptFormat = modelAlias.toLowerCase().includes('llama') ? 'llama3_groq' : 'qwen_coder';
@@ -150,6 +153,13 @@ restRouter.post('/chat', async (req, res) => {
         for (const [toolName, toolData] of ToolRegistry.entries()) {
             if (isAllowed(toolName, allowedToolsList)) {
                 activeTools.push(toolData.schema);
+            }
+        }
+
+        let skillContext = '';
+        for (const [skillId, skillData] of SkillRegistry.entries()) {
+            if (isAllowed(skillId, allowedSkillsList)) {
+                skillContext += `\n\n${skillData.content}`;
             }
         }
 

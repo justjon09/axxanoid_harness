@@ -354,7 +354,14 @@ export async function processTask(task: WorkboardCard) {
                 if (executionResult.success) {
                     console.log(`>>> [EXECUTION VERIFIED SUCCESS]: ${executionResult.output}`);
                     broadcastUpdate('telemetry_log', `[EXECUTION VERIFIED SUCCESS] for task ${task.id}`);
-                    taskCompleted = true;
+                    // ONLY kill the execution loop if the agent explicitly mutated its own card to an end state
+                    if (
+                        action.target === 'workboard_mutate' && 
+                        action.payload && 
+                        ['done', 'blocked', 'failed'].includes(action.payload.status?.toLowerCase())
+                    ) {
+                        taskCompleted = true;
+                    }
                 } else {
                     console.warn(`>>> [EXECUTION FAILED]: ${executionResult.error}`);
                     
