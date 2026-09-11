@@ -354,7 +354,26 @@ export async function processTask(task: WorkboardCard) {
                 if (executionResult.success) {
                     console.log(`>>> [EXECUTION VERIFIED SUCCESS]: ${executionResult.output}`);
                     broadcastUpdate('telemetry_log', `[EXECUTION VERIFIED SUCCESS] for task ${task.id}`);
-                    taskCompleted = true;
+                    
+                    // FEEDBACK LOOP: Pass the result back to the LLM so it doesn't repeat the action
+                    if (conversationHistory.length > 4) {
+                        conversationHistory.splice(2, conversationHistory.length - 4); 
+                    }                    
+                    conversationHistory.push({ role: 'assistant', content: completion.content });
+                    conversationHistory.push({
+                        role: 'user',
+                        content: `TOOL EXECUTION SUCCESS (${action.target}):\n${executionResult.output}\nEvaluate this result and proceed to the next step, or use 'workboard_mutate' if the task is finished.`
+                    });
+                    
+                    // taskCompleted = true;
+                    // ONLY kill the execution loop if the agent explicitly mutated its own card to an end state
+                    if (
+                        action.target === 'workboard_mutate' && 
+                        action.payload && 
+                        ['done', 'blocked', 'failed'].includes(action.payload.status?.toLowerCase())
+                    ) {
+                        taskCompleted = true;
+                    }
                 } else {
                     console.warn(`>>> [EXECUTION FAILED]: ${executionResult.error}`);
                     

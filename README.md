@@ -58,14 +58,4 @@ Skills are Markdown playbooks instructing agents on *how* to combine tools for c
 ### 5. How to Add a Cron Pipeline
 Crons are long-running, autonomous Python scripts running in `axx_env`.
 1.  Place your Python script in `scripts/crons/`.
-2.  Open `configs/system_control.json` and add your definition to the `"crons"` object.
-3.  Specify `"interval_ms"` and `"enabled"`. It will automatically appear in the Web UI System Controls for toggling and on-demand execution.
-
-## System Dependencies
-- **Hardware:** Mac M4 Pro (24GB Unified Memory)
-- **Core Engine:** `llama.cpp` (`llama-server`) running via Homebrew
-- **Routing Core:** Node.js / TypeScript (npm)
-- **Execution Sandbox:** Python 3 (venv)
-- **Models:** 
-  - *Head:* `Llama-3-Groq-8B-Tool-Use-Q4_K_M.gguf` (Orchestration/Routing)
-  - *Hands:* `qwen2.5-coder-14b-instruct-q4_k_m.gguf` (Coding/Execution)
+2.  Open `configs/system_control.json` and add your definition to the `

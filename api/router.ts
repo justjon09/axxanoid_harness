@@ -300,7 +300,8 @@ restRouter.post('/chat', async (req, res) => {
                     } else {
                         broadcastUpdate('telemetry_log', `[ERROR] ${action.target} failed: ${executionResult.error}`);
                         // Feed the error back so the LLM can self-heal or tell the user it failed
-                        formattedMessages.push({ 
+                        conversationHistory.push({ role: 'assistant', content: completion.content });
+                        conversationHistory.push({ 
                             role: 'user', 
                             content: `[SYSTEM TOOL ERROR - ${action.target}]\n${executionResult.error}` 
                         });
