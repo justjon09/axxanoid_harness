@@ -158,7 +158,15 @@ restRouter.post('/chat', async (req, res) => {
 
         let skillContext = '';
         if (allowedSkillsList.length > 0) {
-            skillContext = `\nAuthorized Skills: ${allowedSkillsList.join(', ')}. Use the 'read_file' tool to read a skill file from 'skills/custom/' or 'skills/native/' before executing workflows.`;
+            for (const [skillId, skillData] of SkillRegistry.entries()) {
+                if (isAllowed(skillId, allowedSkillsList)) {
+                    // Dynamically extract the first paragraph or description block
+                    const descMatch = skillData.content.match(/## Description\s*([\s\S]*?)(?=\n##|$)/);
+                    const description = descMatch ? descMatch[1].trim() : "Standard operational playbook.";
+                    
+                    skillContext += `- Name: ${skillId}\n  Path: skills/${skillData.sourceDir}/${skillId}.md\n  Description: ${description}\n\n`;
+                }
+            }
         }
 
         // Fetch the last 15 messages for context

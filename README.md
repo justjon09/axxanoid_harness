@@ -58,4 +58,38 @@ Skills are Markdown playbooks instructing agents on *how* to combine tools for c
 ### 5. How to Add a Cron Pipeline
 Crons are long-running, autonomous Python scripts running in `axx_env`.
 1.  Place your Python script in `scripts/crons/`.
-2.  Open `configs/system_control.json` and add your definition to the `
+2.  Open `configs/system_control.json` and add your definition to the `cron_pipelines` array.
+
+## Issue #1: Description
+
+### Problem
+The current implementation of the Axxanoid Harness does not support the integration of external Python scripts or MCP servers directly through the CLI.
+
+### Solution
+To resolve this issue, we need to add the following functionality:
+
+1.  **Create a new tool** that can wrap external Python scripts or MCP servers.
+2.  **Update the CLI** to support the new tool.
+3.  **Document the new tool** in the `README.md` file.
+
+### Steps to Resolve
+1.  **Create a new tool**:
+    -   Create a new `.ts` file in `tools/custom/` or `tools/native/`.
+    -   Export a `schema` conforming to the `HarnessToolDefinition`.
+    -   Export an `execute(payload)` async function.
+2.  **Update the CLI**:
+    -   Modify the `npm run axx -- tool incorp python <path>` command to use the new tool.
+    -   Modify the `npm run axx -- tool incorp mcp <name> <command>` command to use the new tool.
+3.  **Document the new tool**:
+    -   Add the new tool to the `README.md` file.
+
+### Example
+
+```bash
+npm run axx -- tool incorp python /path/to/script.py
+npm run axx -- tool incorp mcp my_server my_command
+```
+
+## Conclusion
+
+By following the steps outlined above, we can resolve issue #1 and add the necessary functionality to the Axxanoid Harness.
