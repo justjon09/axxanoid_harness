@@ -157,14 +157,9 @@ restRouter.post('/chat', async (req, res) => {
         }
 
         let skillContext = '';
-        for (const [skillId, skillData] of SkillRegistry.entries()) {
-            if (isAllowed(skillId, allowedSkillsList)) {
-                skillContext += `\n\n${skillData.content}`;
-            }
+        if (allowedSkillsList.length > 0) {
+            skillContext = `\nAuthorized Skills: ${allowedSkillsList.join(', ')}. Use the 'read_file' tool to read a skill file from 'skills/custom/' or 'skills/native/' before executing workflows.`;
         }
-
-        // const systemInstruction = "You have full authorization to execute the provided tools. Output the required JSON tool_call to perform system actions.";
-        const systemInstruction = "";
 
         // Fetch the last 15 messages for context
         const pastMessagesRaw = db.prepare(`
@@ -184,7 +179,7 @@ restRouter.post('/chat', async (req, res) => {
         const conversationHistory: ChatMessage[] = [
             {
                 role: 'system',
-                content: `${agentIdentity}\n\n${agentSoul}\n\n${systemInstruction}`
+                content: `${agentIdentity}\n\n${agentSoul}\n\n${skillContext}`
             },
             ...pastMessages
         ];
