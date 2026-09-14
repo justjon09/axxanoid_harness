@@ -239,11 +239,12 @@ export async function processTask(task: WorkboardCard) {
     const grammarSchema = {
         type: "object",
         properties: {
+            internal_thought: { type: "string", description: "Your step-by-step logical deduction to determine your next action." },
             type: { type: "string", enum: ["tool_call", "user_message"] },
             target: { type: "string", description: "The exact name of the tool being called, or 'chat' if type is user_message." },
             payload: { type: "object", description: "The arguments for the tool, or { 'content': 'message' } if user_message." }
         },
-        required: ["type", "target", "payload"]
+        required: ["internal_thought", "type", "target", "payload"]
     };
 
     while (totalSteps < hardCap && !taskCompleted) {
@@ -270,6 +271,17 @@ export async function processTask(task: WorkboardCard) {
                 action = JSON.parse(completion.content || "{}");
             } catch (e) {
                 action = { type: 'user_message', payload: { content: completion.content } };
+            }
+
+            // --- THOUGHT LOGGING ---
+            const controlPath = path.resolve(__dirname, '../configs/system_control.json');
+            let sysControl: any = {};
+            if (fs.existsSync(controlPath)) {
+                sysControl = JSON.parse(fs.readFileSync(controlPath, 'utf-8'));
+            }
+            if (sysControl.show_thinking && action.internal_thought) {
+                console.log(`\n[${task.assignee.toUpperCase()} THOUGHT]: ${action.internal_thought}\n`);
+                broadcastUpdate('telemetry_log', `[${task.assignee.toUpperCase()} THOUGHT]: ${action.internal_thought}`);
             }
 
             // PROSE REJECTION: Worker agents MUST invoke tools, not chat

@@ -207,11 +207,12 @@ restRouter.post('/chat', async (req, res) => {
         const grammarSchema = {
             type: "object",
             properties: {
+                internal_thought: { type: "string", description: "Your step-by-step logical deduction to determine your next action." },
                 type: { type: "string", enum: ["tool_call", "user_message"] },
                 target: { type: "string", description: "The exact name of the tool being called, or 'chat' if type is user_message." },
                 payload: { type: "object", description: "The arguments for the tool, or { 'content': 'message' } if user_message." }
             },
-            required: ["type", "target", "payload"]
+            required: ["internal_thought", "type", "target", "payload"]
         };
 
         while (totalSteps < hardCap && !requestResolved) {
@@ -219,7 +220,6 @@ restRouter.post('/chat', async (req, res) => {
 
             console.log(`\n=== DEBUG [STEP ${totalSteps}]: INBOUND PROMPT ===`);
             console.log(JSON.stringify(formattedMessages[formattedMessages.length - 1], null, 2));
-
 
             // Dispatch with the hardware-level JSON lock
             const completion = await sendLlamaCompletion(formattedMessages, { 
@@ -240,6 +240,16 @@ restRouter.post('/chat', async (req, res) => {
             } catch (e) {
                 // Fallback ONLY if the engine somehow violates its own GBNF grammar
                 action = { type: 'user_message', payload: { content: completion.content } };
+            }
+
+            // --- THOUGHT LOGGING ---
+            let sysControl: any = {};
+            if (fs.existsSync(CONTROL_FILE)) {
+                sysControl = JSON.parse(fs.readFileSync(CONTROL_FILE, 'utf-8'));
+            }
+            if (sysControl.show_thinking && action.internal_thought) {
+                console.log(`\n[${tier1Agent.toUpperCase()} THOUGHT]: ${action.internal_thought}\n`);
+                broadcastUpdate('telemetry_log', `[${tier1Agent.toUpperCase()} THOUGHT]: ${action.internal_thought}`);
             }
 
             if (action.type === 'user_message') {
