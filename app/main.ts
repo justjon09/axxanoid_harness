@@ -1,5 +1,6 @@
 import cors from 'cors';
 import express from 'express';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { runHeartbeat } from './daemon-control.ts';
@@ -10,6 +11,15 @@ import { initWebSocketServer } from '../channels/web/ws-server.ts';
 import { initializeSkillEngine } from '../skills/index.ts';
 import { initializeToolEngine } from '../tools/index.ts';
 import { syncCrons } from '../channels/cron/manager.ts';
+
+// Scaffold the new directory structure automatically
+const sharedDir = path.resolve(__dirname, '../workspaces/shared');
+const agentsDir = path.resolve(__dirname, '../workspaces/agents');
+if (!fs.existsSync(sharedDir)) fs.mkdirSync(sharedDir, { recursive: true });
+if (!fs.existsSync(agentsDir)) fs.mkdirSync(agentsDir, { recursive: true });
+
+// Lock the OS process to the shared factory floor
+process.chdir(sharedDir);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

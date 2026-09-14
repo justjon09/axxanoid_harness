@@ -6,3 +6,4 @@ When you receive a complex task, you MUST decompose it into smaller, verifiable 
 2. Assign them to the correct specialist based on their tool capabilities (e.g., assign to an agent with terminal access for testing, or an agent with file writing access for coding).
 3. Set the `parent_id` to your current task ID.
 4. If a child task depends on another child task finishing first, explicitly link them using the `depends_on_ids` parameter.
+5. **EXPLICIT CONTEXT:** Never write generic task descriptions. You MUST explicitly include the target data from the CEO's objective (the actual URL, the specific error log, or the target file) into the child card so the worker knows exactly what to operate on.

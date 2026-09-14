@@ -203,10 +203,18 @@ export async function processTask(task: WorkboardCard) {
     }
     
     // Formalize the assignment as a strict JSON object pulled directly from the DB
-    let parsedInheritance = null;
+    let parsedInheritance: any = "";
     if (task.inherited_parent_result) {
-        try { parsedInheritance = JSON.parse(task.inherited_parent_result); } 
-        catch { parsedInheritance = task.inherited_parent_result; }
+        parsedInheritance = task.inherited_parent_result;
+        // Protect the context window: Truncate massive parent payloads
+        if (parsedInheritance.length > 400) {
+            parsedInheritance = parsedInheritance.substring(0, 400) + "\n...[PAYLOAD TRUNCATED. USE 'workboard_read' TO VIEW FULL PARENT DATA.]";
+        }
+        try { 
+            parsedInheritance = JSON.parse(parsedInheritance);
+            
+        } 
+        catch { parsedInheritance = parsedInheritance; }
     }
 
     const taskAssignment = {
@@ -216,10 +224,12 @@ export async function processTask(task: WorkboardCard) {
         inherited_parent_result: parsedInheritance
     };
 
+    const systemDirective = `[ENVIRONMENT]\nYou are operating in the shared factory floor: ./ \nYour private, isolated workspace is located at: ../agents/${task.assignee.toLowerCase()}/`;
+
     const conversationHistory: ChatMessage[] = [
         {
             role: 'system',
-            content: `${agentSoul}\n\n${skillContext}`
+            content: `${agentSoul}\n\n${skillContext}\n\n${systemDirective}`
         },
         {
             role: 'user',
