@@ -1,6 +1,10 @@
 import path from 'path';
 import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
 import { HarnessToolDefinition } from '../../engine/translator.ts';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export interface ToolResult {
     success: boolean;
@@ -21,8 +25,8 @@ export const schema: HarnessToolDefinition = {
 };
 
 export async function execute(payload: Record<string, any>): Promise<ToolResult> {
-    const venvPython = path.resolve('axx_env/bin/python');
-    const scriptPath = path.resolve('tools/rag_bridge.py');
+    const venvPython = path.resolve(__dirname, '../../axx_env/bin/python');
+    const scriptPath = path.resolve(__dirname, '../rag_bridge.py');
     
     return new Promise((resolve) => {
         let stdout = '';

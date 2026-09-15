@@ -163,8 +163,10 @@ restRouter.post('/chat', async (req, res) => {
                     // Dynamically extract the first paragraph or description block
                     const descMatch = skillData.content.match(/## Description\s*([\s\S]*?)(?=\n##|$)/);
                     const description = descMatch ? descMatch[1].trim() : "Standard operational playbook.";
-                    
-                    skillContext += `- Name: ${skillId}\n  Path: skills/${skillData.sourceDir}/${skillId}.md\n  Description: ${description}\n\n`;
+
+                    // Construct the absolute path so AxxBot can read it from inside the jail
+                    const absPath = path.resolve(__dirname, '../skills', skillData.sourceDir, `${skillId}.md`);
+                    skillContext += `- Name: ${skillId}\n  Path: ${absPath}\n  Description: ${description}\n\n`;                    
                 }
             }
         }

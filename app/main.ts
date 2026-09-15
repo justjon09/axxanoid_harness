@@ -12,6 +12,9 @@ import { initializeSkillEngine } from '../skills/index.ts';
 import { initializeToolEngine } from '../tools/index.ts';
 import { syncCrons } from '../channels/cron/manager.ts';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Scaffold the new directory structure automatically
 const sharedDir = path.resolve(__dirname, '../workspaces/shared');
 const agentsDir = path.resolve(__dirname, '../workspaces/agents');
@@ -20,9 +23,6 @@ if (!fs.existsSync(agentsDir)) fs.mkdirSync(agentsDir, { recursive: true });
 
 // Lock the OS process to the shared factory floor
 process.chdir(sharedDir);
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 8000;
