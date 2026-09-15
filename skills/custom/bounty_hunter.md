@@ -14,7 +14,7 @@ You MUST create 5 cards linked sequentially using `depends_on_ids`. Write the de
 - Example: `git clone <URL> repo_dir && cd repo_dir && git checkout -b fix/bounty-issue`
 
 **Phase 2: Code Generation & Patching (Assign to: noid)**
-- Description MUST explicitly state the Issue Number, the specific bug details, and the cloned directory name (e.g., `./repo_dir`). Instruct Noid to read the files in that directory and write the fix.
+- Description MUST contain the cloned directory name (e.g., `./repo_dir`) and a clear, technical summary of the bug details provided by the CEO. Do not just say "Fix Issue"; you must explain *what* the issue is so Noid has the context to fix it.
 - *Dependency:* Depends on Phase 1.
 
 **Phase 3: Isolated CI Validation (Assign to: execubot)**
