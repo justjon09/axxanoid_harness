@@ -224,12 +224,10 @@ export async function processTask(task: WorkboardCard) {
         inherited_parent_result: parsedInheritance
     };
 
-    const systemDirective = `[ENVIRONMENT]\nYou are operating in the shared factory floor: ./ \nYour private, isolated workspace is located at: ../agents/${task.assignee.toLowerCase()}/`;
-
     const conversationHistory: ChatMessage[] = [
         {
             role: 'system',
-            content: `${agentSoul}\n\n${skillContext}\n\n${systemDirective}`
+            content: `${agentSoul}\n\n${skillContext}`
         },
         {
             role: 'user',
