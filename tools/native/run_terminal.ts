@@ -1,7 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
 import { HarnessToolDefinition } from '../../engine/translator.ts';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export interface ToolResult {
     success: boolean;
@@ -30,17 +34,7 @@ export async function execute(payload: Record<string, any>): Promise<ToolResult>
     
     try {
         let commandToRun = payload.command;
-        // const venvPython = path.resolve('axx_env/bin/python');
-        
-        // // Isolate python execution inside the axx_env sandbox
-        // if (commandToRun.startsWith('python ') || commandToRun.startsWith('python3 ')) {
-        //     if (fs.existsSync(venvPython)) {
-        //         commandToRun = commandToRun.replace(/^python3?/, venvPython);
-        //     }
-        // }
-
-        // Define the absolute paths to your sandbox
-        const venvPath = path.resolve('axx_env');
+        const venvPath = path.resolve(__dirname, '../../axx_env');
         const venvBin = path.join(venvPath, 'bin');
 
         // Programmatically enforce the virtual environment

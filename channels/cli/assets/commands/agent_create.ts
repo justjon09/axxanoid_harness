@@ -17,8 +17,8 @@ export function agentCreate (args: string[]) {
         process.exit(1);
     }
 
-    const agentDir = path.resolve(__dirname, `../../agents/${agentName}`);
-    const workspaceDir = path.join(agentDir, 'WORKSPACE');
+    const agentDir = path.resolve(__dirname, `../../../../agents/${agentName}`);
+    const workspaceDir = path.resolve(__dirname, `../../../../workspaces/agents/${agentName}`);
 
     if (fs.existsSync(agentDir)) {
         console.error(`>>> [CLI] Error: Agent '${agentName}' already exists.`);
@@ -31,7 +31,7 @@ export function agentCreate (args: string[]) {
         agent_id: agentName,
         tier: tier,
         assigned_model: tier === 1 ? "llama-3-groq-8b-tool-use" : "qwen2.5-coder-14b-instruct",
-        workspace_path: `AXXANOID_HARNES/agents/${agentName}/WORKSPACE/`,
+        workspace_path: `/workspaces/agents/${agentName}/`,
         allowed_tools: ["read_file", "write_file", "workboard_read", "workboard_mutate", "workboard_create"],
         allowed_skills: ["task_decomposition", "needs_blocking"]
     };

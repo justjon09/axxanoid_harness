@@ -203,10 +203,18 @@ export async function processTask(task: WorkboardCard) {
     }
     
     // Formalize the assignment as a strict JSON object pulled directly from the DB
-    let parsedInheritance = null;
+    let parsedInheritance: any = "";
     if (task.inherited_parent_result) {
-        try { parsedInheritance = JSON.parse(task.inherited_parent_result); } 
-        catch { parsedInheritance = task.inherited_parent_result; }
+        parsedInheritance = task.inherited_parent_result;
+        // Protect the context window: Truncate massive parent payloads
+        if (parsedInheritance.length > 400) {
+            parsedInheritance = parsedInheritance.substring(0, 400) + "\n...[PAYLOAD TRUNCATED. USE 'workboard_read' TO VIEW FULL PARENT DATA.]";
+        }
+        try { 
+            parsedInheritance = JSON.parse(parsedInheritance);
+            
+        } 
+        catch { parsedInheritance = parsedInheritance; }
     }
 
     const taskAssignment = {
@@ -216,10 +224,12 @@ export async function processTask(task: WorkboardCard) {
         inherited_parent_result: parsedInheritance
     };
 
+    const systemDirective = `[ENVIRONMENT]\nYou are operating in the shared factory floor: ./ \nYour private, isolated workspace is located at: ../agents/${task.assignee.toLowerCase()}/`;
+
     const conversationHistory: ChatMessage[] = [
         {
             role: 'system',
-            content: `${agentSoul}\n\n${skillContext}`
+            content: `${agentSoul}\n\n${skillContext}\n\n${systemDirective}`
         },
         {
             role: 'user',
@@ -239,11 +249,12 @@ export async function processTask(task: WorkboardCard) {
     const grammarSchema = {
         type: "object",
         properties: {
+            internal_thought: { type: "string", description: "Your step-by-step logical deduction to determine your next action." },
             type: { type: "string", enum: ["tool_call", "user_message"] },
             target: { type: "string", description: "The exact name of the tool being called, or 'chat' if type is user_message." },
             payload: { type: "object", description: "The arguments for the tool, or { 'content': 'message' } if user_message." }
         },
-        required: ["type", "target", "payload"]
+        required: ["internal_thought", "type", "target", "payload"]
     };
 
     while (totalSteps < hardCap && !taskCompleted) {
@@ -270,6 +281,17 @@ export async function processTask(task: WorkboardCard) {
                 action = JSON.parse(completion.content || "{}");
             } catch (e) {
                 action = { type: 'user_message', payload: { content: completion.content } };
+            }
+
+            // --- THOUGHT LOGGING ---
+            const controlPath = path.resolve(__dirname, '../configs/system_control.json');
+            let sysControl: any = {};
+            if (fs.existsSync(controlPath)) {
+                sysControl = JSON.parse(fs.readFileSync(controlPath, 'utf-8'));
+            }
+            if (sysControl.show_thinking && action.internal_thought) {
+                console.log(`\n[${task.assignee.toUpperCase()} THOUGHT]: ${action.internal_thought}\n`);
+                broadcastUpdate('telemetry_log', `[${task.assignee.toUpperCase()} THOUGHT]: ${action.internal_thought}`);
             }
 
             // PROSE REJECTION: Worker agents MUST invoke tools, not chat
@@ -354,7 +376,26 @@ export async function processTask(task: WorkboardCard) {
                 if (executionResult.success) {
                     console.log(`>>> [EXECUTION VERIFIED SUCCESS]: ${executionResult.output}`);
                     broadcastUpdate('telemetry_log', `[EXECUTION VERIFIED SUCCESS] for task ${task.id}`);
-                    taskCompleted = true;
+                    
+                    // FEEDBACK LOOP: Pass the result back to the LLM so it doesn't repeat the action
+                    if (conversationHistory.length > 4) {
+                        conversationHistory.splice(2, conversationHistory.length - 4); 
+                    }                    
+                    conversationHistory.push({ role: 'assistant', content: completion.content });
+                    conversationHistory.push({
+                        role: 'user',
+                        content: `TOOL EXECUTION SUCCESS (${action.target}):\n${executionResult.output}\nEvaluate this result and proceed to the next step, or use 'workboard_mutate' if the task is finished.`
+                    });
+                    
+                    // taskCompleted = true;
+                    // ONLY kill the execution loop if the agent explicitly mutated its own card to an end state
+                    if (
+                        action.target === 'workboard_mutate' && 
+                        action.payload && 
+                        ['done', 'blocked', 'failed'].includes(action.payload.status?.toLowerCase())
+                    ) {
+                        taskCompleted = true;
+                    }
                 } else {
                     console.warn(`>>> [EXECUTION FAILED]: ${executionResult.error}`);
                     

@@ -7,6 +7,7 @@ import { db } from '../app/database.ts';
 import { broadcastUpdate } from '../channels/web/ws-server.ts';
 import { sendLlamaCompletion, ChatMessage } from '../engine/llama-client.ts';
 import { formatPromptForModel, parseAgentAction, HarnessToolDefinition } from '../engine/translator.ts';
+import { SkillRegistry } from '../skills/index.ts';
 import { ToolRegistry, executeTool } from '../tools/index.ts';
 import { syncCrons, forceRunCron } from '../channels/cron/manager.ts';
 
@@ -123,6 +124,7 @@ restRouter.post('/chat', async (req, res) => {
         const soulPath = path.join(agentDir, 'SOUL.md');
         const identityPath = path.join(agentDir, 'IDENTITY.md');
 
+        let allowedSkillsList: string[] = [];
         let allowedToolsList: string[] = [];
         let agentSoul = '';
         let agentIdentity = '';
@@ -132,6 +134,7 @@ restRouter.post('/chat', async (req, res) => {
         if (fs.existsSync(configPath)) {
             const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
             allowedToolsList = config.allowed_tools || [];
+            allowedSkillsList = config.allowed_skills || [];
             if (config.assigned_model) {
                 modelAlias = config.assigned_model;
                 promptFormat = modelAlias.toLowerCase().includes('llama') ? 'llama3_groq' : 'qwen_coder';
@@ -153,8 +156,20 @@ restRouter.post('/chat', async (req, res) => {
             }
         }
 
-        // const systemInstruction = "You have full authorization to execute the provided tools. Output the required JSON tool_call to perform system actions.";
-        const systemInstruction = "";
+        let skillContext = '';
+        if (allowedSkillsList.length > 0) {
+            for (const [skillId, skillData] of SkillRegistry.entries()) {
+                if (isAllowed(skillId, allowedSkillsList)) {
+                    // Dynamically extract the first paragraph or description block
+                    const descMatch = skillData.content.match(/## Description\s*([\s\S]*?)(?=\n##|$)/);
+                    const description = descMatch ? descMatch[1].trim() : "Standard operational playbook.";
+
+                    // Construct the absolute path so AxxBot can read it from inside the jail
+                    const absPath = path.resolve(__dirname, '../skills', skillData.sourceDir, `${skillId}.md`);
+                    skillContext += `- Name: ${skillId}\n  Path: ${absPath}\n  Description: ${description}\n\n`;                    
+                }
+            }
+        }
 
         // Fetch the last 15 messages for context
         const pastMessagesRaw = db.prepare(`
@@ -174,7 +189,7 @@ restRouter.post('/chat', async (req, res) => {
         const conversationHistory: ChatMessage[] = [
             {
                 role: 'system',
-                content: `${agentIdentity}\n\n${agentSoul}\n\n${systemInstruction}`
+                content: `${agentIdentity}\n\n${agentSoul}\n\n${skillContext}`
             },
             ...pastMessages
         ];
@@ -194,11 +209,12 @@ restRouter.post('/chat', async (req, res) => {
         const grammarSchema = {
             type: "object",
             properties: {
+                internal_thought: { type: "string", description: "Your step-by-step logical deduction to determine your next action." },
                 type: { type: "string", enum: ["tool_call", "user_message"] },
                 target: { type: "string", description: "The exact name of the tool being called, or 'chat' if type is user_message." },
                 payload: { type: "object", description: "The arguments for the tool, or { 'content': 'message' } if user_message." }
             },
-            required: ["type", "target", "payload"]
+            required: ["internal_thought", "type", "target", "payload"]
         };
 
         while (totalSteps < hardCap && !requestResolved) {
@@ -206,7 +222,6 @@ restRouter.post('/chat', async (req, res) => {
 
             console.log(`\n=== DEBUG [STEP ${totalSteps}]: INBOUND PROMPT ===`);
             console.log(JSON.stringify(formattedMessages[formattedMessages.length - 1], null, 2));
-
 
             // Dispatch with the hardware-level JSON lock
             const completion = await sendLlamaCompletion(formattedMessages, { 
@@ -227,6 +242,16 @@ restRouter.post('/chat', async (req, res) => {
             } catch (e) {
                 // Fallback ONLY if the engine somehow violates its own GBNF grammar
                 action = { type: 'user_message', payload: { content: completion.content } };
+            }
+
+            // --- THOUGHT LOGGING ---
+            let sysControl: any = {};
+            if (fs.existsSync(CONTROL_FILE)) {
+                sysControl = JSON.parse(fs.readFileSync(CONTROL_FILE, 'utf-8'));
+            }
+            if (sysControl.show_thinking && action.internal_thought) {
+                console.log(`\n[${tier1Agent.toUpperCase()} THOUGHT]: ${action.internal_thought}\n`);
+                broadcastUpdate('telemetry_log', `[${tier1Agent.toUpperCase()} THOUGHT]: ${action.internal_thought}`);
             }
 
             if (action.type === 'user_message') {
@@ -295,7 +320,8 @@ restRouter.post('/chat', async (req, res) => {
                     } else {
                         broadcastUpdate('telemetry_log', `[ERROR] ${action.target} failed: ${executionResult.error}`);
                         // Feed the error back so the LLM can self-heal or tell the user it failed
-                        formattedMessages.push({ 
+                        conversationHistory.push({ role: 'assistant', content: completion.content });
+                        conversationHistory.push({ 
                             role: 'user', 
                             content: `[SYSTEM TOOL ERROR - ${action.target}]\n${executionResult.error}` 
                         });

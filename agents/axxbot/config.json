@@ -2,7 +2,7 @@
   "agent_id": "axxbot",
   "tier": 1,
   "assigned_model": "qwen2.5-coder-14b-instruct",
-  "workspace_path": "AXXANOID_HARNES/agents/axxbot/WORKSPACE/",
+  "workspace_path": "/workspaces/agents/axxbot/",
   "allowed_tools": [
     "workboard_*",
     "read_file",
@@ -14,6 +14,7 @@
   "allowed_skills": [
     "triage_*",
     "system_audit",
-    "memory_retrieval"
+    "memory_retrieval",
+    "bounty_hunter"
   ]
 }

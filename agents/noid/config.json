@@ -2,7 +2,7 @@
   "agent_id": "noid",
   "tier": 2,
   "assigned_model": "qwen2.5-coder-14b-instruct",
-  "workspace_path": "AXXANOID_HARNES/agents/noid/WORKSPACE/",
+  "workspace_path": "/workspaces/agents/noid/",
   "allowed_tools": [
     "read_file", 
     "write_file", 
