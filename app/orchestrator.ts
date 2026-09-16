@@ -108,8 +108,11 @@ export async function autoTriageBlockedCards() {
     const blockedCards = db.prepare(`SELECT * FROM workboard_cards WHERE status = 'blocked' AND result_payload LIKE '%missing_need%'`).all() as WorkboardCard[];
     
     for (const card of blockedCards) {
-        // Check if ANY triage task has ever been created for this card ID, regardless of status
-        const existing = db.prepare(`SELECT id FROM workboard_cards WHERE assignee = ? AND title = ?`).get(tier1Agent, `Triage Blocked Card: ${card.id}`);
+        // Skip if a triage task is currently ready or in_progress
+        const existing = db.prepare(`
+            SELECT id FROM workboard_cards 
+            WHERE assignee = ? AND title = ? AND status IN ('ready', 'in_progress')
+        `).get(tier1Agent, `Triage Blocked Card: ${card.id}`);
         
         if (!existing) {
             const triageId = `task-${crypto.randomUUID().slice(0, 8)}`;
@@ -119,7 +122,7 @@ export async function autoTriageBlockedCards() {
             `).run(
                 triageId,
                 `Triage Blocked Card: ${card.id}`,
-                `Card ${card.id} is blocked. Read its payload for the 'missing_need'. Delegate a fix using workboard_create, then mark this triage task as done.`,
+                `Card ${card.id} is blocked with a missing need. Execute the triage_blocked skill playbook: inspect the payload, spawn a remediation task, monitor its progress, and unblock card ${card.id} once verified.`,
                 tier1Agent
             );
 
