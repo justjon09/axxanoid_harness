@@ -26,6 +26,15 @@ You MUST create 5 cards linked sequentially using `depends_on_ids`. Write the de
 - Description MUST state: "You are the QA Gate. Immediately use `workboard_mutate` to change this card's status to `blocked` with the payload 'AWAITING CEO REVIEW'. Do NOT mark this done. Wait for the CEO to explicitly say 'I approve Phase 4' in the chat before marking it done."
 - *Dependency:* Depends on Phase 3.
 
+    ## Handling CEO Approvals
+    When the CEO explicitly approves Phase 4 in the chat (e.g., "I approve Phase 4"), you MUST NOT create a new workboard card to continue the work. The Phase 5 card is already waiting on the board.
+
+    Your ONLY job is to unblock the paused task so the pipeline can automatically resume:
+    1. Use the `workboard_read` tool to find your Phase 4 QA Gate card that is currently `blocked`.
+    2. Use the `workboard_mutate` tool to change that specific card's status to `done`. 
+
+    Do nothing else. The Orchestrator will automatically trigger Phase 5 once the gate is marked done.
+
 **Phase 5: Payout Submission (Assign to: execubot)**
 - Description MUST include the full commit, push, and PR commands.
 - Example: `cd repo_dir && git add . && git commit -m "Fix issue" && git push origin HEAD && gh pr create --title "Fix: Resolve issue" --body "Closes #123"`

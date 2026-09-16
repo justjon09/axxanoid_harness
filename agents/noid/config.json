@@ -6,7 +6,8 @@
   "allowed_tools": [
     "read_file", 
     "write_file", 
-    "list_files", 
+    "patch_file",
+    "list_files",
     "chat_search",
     "workboard_read",
     "workboard_create",

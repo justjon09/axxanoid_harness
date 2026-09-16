@@ -3,6 +3,7 @@
   "tools": {
     "write_file": true,
     "read_file": true,
+    "patch_file": true,
     "list_files": true,
     "run_terminal": true,
     "workboard_read": true,

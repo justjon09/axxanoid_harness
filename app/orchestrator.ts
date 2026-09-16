@@ -108,7 +108,8 @@ export async function autoTriageBlockedCards() {
     const blockedCards = db.prepare(`SELECT * FROM workboard_cards WHERE status = 'blocked' AND result_payload LIKE '%missing_need%'`).all() as WorkboardCard[];
     
     for (const card of blockedCards) {
-        const existing = db.prepare(`SELECT id FROM workboard_cards WHERE assignee = ? AND title = ? AND status IN ('ready', 'in_progress')`).get(tier1Agent, `Triage Blocked Card: ${card.id}`);
+        // Check if ANY triage task has ever been created for this card ID, regardless of status
+        const existing = db.prepare(`SELECT id FROM workboard_cards WHERE assignee = ? AND title = ?`).get(tier1Agent, `Triage Blocked Card: ${card.id}`);
         
         if (!existing) {
             const triageId = `task-${crypto.randomUUID().slice(0, 8)}`;
@@ -123,7 +124,6 @@ export async function autoTriageBlockedCards() {
             );
 
             broadcastUpdate('board_refresh', {});
-
             console.log(`>>> [ORCHESTRATOR] Auto-Spawned Triage Task [${triageId}] for Blocked Card [${card.id}] assigned to [${tier1Agent.toUpperCase()}]`);
         }
     }
@@ -295,7 +295,7 @@ export async function processTask(task: WorkboardCard) {
             // PROSE REJECTION: Worker agents MUST invoke tools, not chat
             if (isWorker && action.type === 'user_message') {
                 const candidateContent = action.payload?.content || action.raw_response || completion.content;
-                console.warn(`>>> [PROSE REJECTED] Worker [${task.assignee.toUpperCase()}] returned prose instead of a tool call.`);
+                console.warn(`>>> [PROSE REJECTED] Worker [${task.assignee.toUpperCase()}] returned prose instead of a tool call.\n\n Content:\n${candidateContent}`);
 
                 conversationHistory.push({ role: 'assistant', content: completion.content });
                 conversationHistory.push({
@@ -317,7 +317,8 @@ export async function processTask(task: WorkboardCard) {
                     consecutiveDuplicates++;
                     if (consecutiveDuplicates >= maxDuplicates) {
                         console.warn(`>>> [LOOP DETECTED] Worker stuck in prose loop. Terminating task.`);
-                        taskCompleted = true; 
+                        // taskCompleted = true; 
+                        break;
                     }
                 } else {
                     consecutiveDuplicates = 0;
@@ -343,7 +344,7 @@ export async function processTask(task: WorkboardCard) {
                             agent: task.assignee,
                             error: `Execution halted: Stuck in an identical loop calling '${action.target}'. Payload: ${JSON.stringify(action.payload)}`
                         };
-                        taskCompleted = true;
+                        // taskCompleted = true;
                         break;
                     }
                 } else {
