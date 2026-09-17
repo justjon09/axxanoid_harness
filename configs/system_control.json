@@ -1,7 +1,9 @@
 {
+  "show_thinking": true,
   "tools": {
     "write_file": true,
     "read_file": true,
+    "patch_file": true,
     "list_files": true,
     "run_terminal": true,
     "workboard_read": true,
@@ -10,11 +12,16 @@
     "chat_search": true,
     "rag_search": true,
     "rag_ingest": true,
-    "get_agent_skills": true
+    "get_agent_skills": true,
+    "run_docker_terminal": true
   },
   "skills": {
     "system_telemetry": true,
-    "memory_retrieval": true
+    "memory_retrieval": true,
+    "bounty_hunter": true,
+    "docker_ci_runner": true,
+    "task_decomposition": true,
+    "sub_task_decomposition": true
   },
   "crons": {
     "as_directory_pipeline": {
@@ -22,7 +29,7 @@
       "script": "scripts/crons/as/directory_pipeline/master_cron.py",
       "interval_ms": 21600000,
       "description": "Runs the full 6-step directory scraping and outreach pipeline every 6 hours.",
-      "debug": true
+      "debug": false
     }
   }
 }

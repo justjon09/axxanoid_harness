@@ -62,7 +62,7 @@ export async function resolveDependencies() {
     const blockedCards = db.prepare(`SELECT * FROM workboard_cards WHERE status = 'blocked'`).all() as WorkboardCard[];
     for (const card of blockedCards) {
         // Protect cards that were manually blocked by workers needing triage
-        if (card.result_payload && card.result_payload.includes('missing_need')) {
+        if (card.result_payload && (card.result_payload.includes('missing_need') || card.result_payload.includes('missing_input'))) {
             continue; 
         }
         
@@ -108,7 +108,11 @@ export async function autoTriageBlockedCards() {
     const blockedCards = db.prepare(`SELECT * FROM workboard_cards WHERE status = 'blocked' AND result_payload LIKE '%missing_need%'`).all() as WorkboardCard[];
     
     for (const card of blockedCards) {
-        const existing = db.prepare(`SELECT id FROM workboard_cards WHERE assignee = ? AND title = ? AND status IN ('ready', 'in_progress')`).get(tier1Agent, `Triage Blocked Card: ${card.id}`);
+        // Skip if a triage task is currently ready or in_progress
+        const existing = db.prepare(`
+            SELECT id FROM workboard_cards 
+            WHERE assignee = ? AND title = ? AND status IN ('ready', 'in_progress')
+        `).get(tier1Agent, `Triage Blocked Card: ${card.id}`);
         
         if (!existing) {
             const triageId = `task-${crypto.randomUUID().slice(0, 8)}`;
@@ -118,12 +122,11 @@ export async function autoTriageBlockedCards() {
             `).run(
                 triageId,
                 `Triage Blocked Card: ${card.id}`,
-                `Card ${card.id} is blocked. Read its payload for the 'missing_need'. Delegate a fix using workboard_create, then mark this triage task as done.`,
+                `Card ${card.id} is blocked with a missing need. Execute the triage_blocked skill playbook: inspect the payload, spawn a remediation task, monitor its progress, and unblock card ${card.id} once verified.`,
                 tier1Agent
             );
 
             broadcastUpdate('board_refresh', {});
-
             console.log(`>>> [ORCHESTRATOR] Auto-Spawned Triage Task [${triageId}] for Blocked Card [${card.id}] assigned to [${tier1Agent.toUpperCase()}]`);
         }
     }
@@ -203,10 +206,18 @@ export async function processTask(task: WorkboardCard) {
     }
     
     // Formalize the assignment as a strict JSON object pulled directly from the DB
-    let parsedInheritance = null;
+    let parsedInheritance: any = "";
     if (task.inherited_parent_result) {
-        try { parsedInheritance = JSON.parse(task.inherited_parent_result); } 
-        catch { parsedInheritance = task.inherited_parent_result; }
+        parsedInheritance = task.inherited_parent_result;
+        // Protect the context window: Truncate massive parent payloads
+        if (parsedInheritance.length > 400) {
+            parsedInheritance = parsedInheritance.substring(0, 400) + "\n...[PAYLOAD TRUNCATED. USE 'workboard_read' TO VIEW FULL PARENT DATA.]";
+        }
+        try { 
+            parsedInheritance = JSON.parse(parsedInheritance);
+            
+        } 
+        catch { parsedInheritance = parsedInheritance; }
     }
 
     const taskAssignment = {
@@ -239,11 +250,12 @@ export async function processTask(task: WorkboardCard) {
     const grammarSchema = {
         type: "object",
         properties: {
+            internal_thought: { type: "string", description: "Your step-by-step logical deduction to determine your next action." },
             type: { type: "string", enum: ["tool_call", "user_message"] },
             target: { type: "string", description: "The exact name of the tool being called, or 'chat' if type is user_message." },
             payload: { type: "object", description: "The arguments for the tool, or { 'content': 'message' } if user_message." }
         },
-        required: ["type", "target", "payload"]
+        required: ["internal_thought", "type", "target", "payload"]
     };
 
     while (totalSteps < hardCap && !taskCompleted) {
@@ -272,10 +284,21 @@ export async function processTask(task: WorkboardCard) {
                 action = { type: 'user_message', payload: { content: completion.content } };
             }
 
+            // --- THOUGHT LOGGING ---
+            const controlPath = path.resolve(__dirname, '../configs/system_control.json');
+            let sysControl: any = {};
+            if (fs.existsSync(controlPath)) {
+                sysControl = JSON.parse(fs.readFileSync(controlPath, 'utf-8'));
+            }
+            if (sysControl.show_thinking && action.internal_thought) {
+                console.log(`\n[${task.assignee.toUpperCase()} THOUGHT]: ${action.internal_thought}\n`);
+                broadcastUpdate('telemetry_log', `[${task.assignee.toUpperCase()} THOUGHT]: ${action.internal_thought}`);
+            }
+
             // PROSE REJECTION: Worker agents MUST invoke tools, not chat
             if (isWorker && action.type === 'user_message') {
                 const candidateContent = action.payload?.content || action.raw_response || completion.content;
-                console.warn(`>>> [PROSE REJECTED] Worker [${task.assignee.toUpperCase()}] returned prose instead of a tool call.`);
+                console.warn(`>>> [PROSE REJECTED] Worker [${task.assignee.toUpperCase()}] returned prose instead of a tool call.\n\n Content:\n${candidateContent}`);
 
                 conversationHistory.push({ role: 'assistant', content: completion.content });
                 conversationHistory.push({
@@ -297,7 +320,8 @@ export async function processTask(task: WorkboardCard) {
                     consecutiveDuplicates++;
                     if (consecutiveDuplicates >= maxDuplicates) {
                         console.warn(`>>> [LOOP DETECTED] Worker stuck in prose loop. Terminating task.`);
-                        taskCompleted = true; 
+                        // taskCompleted = true; 
+                        break;
                     }
                 } else {
                     consecutiveDuplicates = 0;
@@ -323,7 +347,7 @@ export async function processTask(task: WorkboardCard) {
                             agent: task.assignee,
                             error: `Execution halted: Stuck in an identical loop calling '${action.target}'. Payload: ${JSON.stringify(action.payload)}`
                         };
-                        taskCompleted = true;
+                        // taskCompleted = true;
                         break;
                     }
                 } else {
@@ -354,7 +378,26 @@ export async function processTask(task: WorkboardCard) {
                 if (executionResult.success) {
                     console.log(`>>> [EXECUTION VERIFIED SUCCESS]: ${executionResult.output}`);
                     broadcastUpdate('telemetry_log', `[EXECUTION VERIFIED SUCCESS] for task ${task.id}`);
-                    taskCompleted = true;
+                    
+                    // FEEDBACK LOOP: Pass the result back to the LLM so it doesn't repeat the action
+                    if (conversationHistory.length > 4) {
+                        conversationHistory.splice(2, conversationHistory.length - 4); 
+                    }                    
+                    conversationHistory.push({ role: 'assistant', content: completion.content });
+                    conversationHistory.push({
+                        role: 'user',
+                        content: `TOOL EXECUTION SUCCESS (${action.target}):\n${executionResult.output}\nEvaluate this result and proceed to the next step, or use 'workboard_mutate' if the task is finished.`
+                    });
+                    
+                    // taskCompleted = true;
+                    // ONLY kill the execution loop if the agent explicitly mutated its own card to an end state
+                    if (
+                        action.target === 'workboard_mutate' && 
+                        action.payload && 
+                        ['done', 'blocked', 'failed'].includes(action.payload.status?.toLowerCase())
+                    ) {
+                        taskCompleted = true;
+                    }
                 } else {
                     console.warn(`>>> [EXECUTION FAILED]: ${executionResult.error}`);
                     
@@ -366,7 +409,7 @@ export async function processTask(task: WorkboardCard) {
                     conversationHistory.push({ role: 'assistant', content: completion.content });
                     conversationHistory.push({
                         role: 'user',
-                        content: `TOOL EXECUTION ERROR (${action.target}): ${executionResult.error}\nFix the issue in your parameters/code and re-issue the tool_call. Use 'chat_search' if you need to review earlier history.`
+                        content: `TOOL EXECUTION ERROR (${action.target}): ${executionResult.error}\nFix the issue in your parameters/code and re-issue the tool_call.`
                     });
                 }
             } else {

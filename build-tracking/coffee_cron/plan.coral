@@ -1,0 +1,199 @@
+// ==========================================
+// CONFIGURATION & DEPENDENCIES
+// ==========================================
+IMPORT Config FROM "external_config.json"
+IMPORT HTTP_Client, Regex, DNS_Resolver, Socket
+
+/*
+Expected shape of external_config.json:
+{
+"OVERPASS_API_URL": "https://overpass-api.de/api/interpreter",
+"SMTP_SENDER_EMAIL": "verify@lagginglogic.com",
+"STORE_CART_URL": "https://lagginglogic.com/cart/",
+"POD_VARIANT_ID": "1234567890",
+"SEAL_PLAN_ID": "0987654321",
+"B2B_DISCOUNT_CODE": "BREAKROOM15"
+}
+*/
+
+// ==========================================
+// PHASE 1: TARGET SCRAPING & ENRICHMENT
+// ==========================================
+
+FUNCTION Fetch_Target_Offices(city_name, state):
+// Query Overpass API for professional office categories
+overpass_query = """
+[out:json][timeout:30];
+area["name"="""" + city_name + """"]->.searchArea;
+(
+node"office"~"lawyer|accountant|architect|it|company";
+way"office"~"lawyer|accountant|architect|it|company";
+);
+out body;
+>;
+out skel qt;
+"""
+
+response = HTTP_Client.POST(Config.OVERPASS_API_URL, body=overpass_query)
+raw_nodes = response.json.elements
+
+office_targets = []
+FOR EACH node IN raw_nodes:
+    IF node.tags.website IS NOT NULL:
+        office_targets.APPEND({
+            "company_name": node.tags.name OR "Local Business",
+            "website": Normalize_URL(node.tags.website)
+        })
+        
+RETURN office_targets
+
+
+FUNCTION Scrape_Office_Decision_Maker(domain_url):
+target_paths = ["/about", "/our-team", "/team", "/staff", "/contact"]
+target_titles = ["office manager", "operations manager", "firm administrator", "executive assistant"]
+
+html_corpus = Fetch_HTML_From_Paths(domain_url, target_paths)
+
+// 1. Check for generic role-based emails (office@, admin@)
+generic_match = Find_Generic_Role_Emails(html_corpus)
+IF generic_match: RETURN generic_match
+
+// 2. Parse text for names associated with target titles
+FOR EACH title IN target_titles:
+    pattern = r'([A-Z][a-z]+ [A-Z][a-z]+)[\s,–—\-]+' + Regex.Escape(title)
+    match = Regex.Search(pattern, html_corpus, IGNORE_CASE)
+    
+    IF match FOUND:
+        first_name, last_name = Split_Name(match.group(1))
+        domain_name = Extract_Root_Domain(domain_url)
+        
+        // Reconstruct and test email permutations
+        candidate_emails = Generate_Email_Permutations(first_name, last_name, domain_name)
+        
+        FOR EACH candidate IN candidate_emails:
+            IF Zero_Cost_SMTP_Ping(candidate, domain_name):
+                RETURN {"name": first_name, "email": candidate}
+                
+RETURN NULL
+
+
+FUNCTION Zero_Cost_SMTP_Ping(email, domain):
+mx_records = DNS_Resolver.Query(domain, "MX")
+IF mx_records IS EMPTY: RETURN FALSE
+
+primary_mx = mx_records.SORT_BY_PRIORITY()[0].host
+
+TRY:
+    socket = Socket.Connect(primary_mx, 25, timeout=5)
+    socket.Receive() 
+    socket.Send("HELO localhost\r\n")
+    socket.Receive()
+    
+    socket.Send("MAIL FROM:<" + Config.SMTP_SENDER_EMAIL + ">\r\n")
+    socket.Receive()
+    
+    socket.Send("RCPT TO:<" + email + ">\r\n")
+    response = socket.Receive()
+    
+    socket.Send("QUIT\r\n")
+    socket.Close()
+    
+    RETURN response.STARTS_WITH("250")
+CATCH Exception:
+    RETURN FALSE
+
+
+// ==========================================
+// PHASE 2: BUNDLING & PAYLOAD GENERATION
+// ==========================================
+
+TIER_1_MICRO = { "name": "Starter (40 Pods)", "boxes": 4, "price": 62.92 }
+TIER_2_STANDARD = { "name": "Team (80 Pods)", "boxes": 8, "price": 125.84 }
+TIER_3_COMMERCIAL = { "name": "High-Traffic (120 Pods)", "boxes": 12, "price": 188.76 }
+
+FUNCTION Assign_Office_Bundle(staff_count):
+IF staff_count <= 5: RETURN TIER_1_MICRO
+IF staff_count <= 15: RETURN TIER_2_STANDARD
+RETURN TIER_3_COMMERCIAL
+
+FUNCTION Generate_Targeted_Outbound_Payload(lead, staff_count):
+selected_tier = Assign_Office_Bundle(staff_count)
+
+// Construct pre-filled Shopify cart permalink
+checkout_url = Config.STORE_CART_URL + 
+               Config.POD_VARIANT_ID + ":" + selected_tier.boxes + 
+               "?selling_plan=" + Config.SEAL_PLAN_ID + 
+               "&discount=" + Config.B2B_DISCOUNT_CODE
+
+RETURN {
+    "email": lead.email,
+    "name": lead.name,
+    "company": lead.company_name,
+    "pod_count": selected_tier.boxes * 10,
+    "box_count": selected_tier.boxes,
+    "monthly_total": selected_tier.price,
+    "url": checkout_url
+}
+
+
+// ==========================================
+// PHASE 3: OUTREACH EXECUTION
+// ==========================================
+
+FUNCTION Execute_B2B_Outreach(payload):
+email_body = """
+Hey {payload.name},
+
+Who handles keeping the Keurig stocked for the {payload.company} team?
+
+Most breakrooms run out of pods mid-month because nobody wants to do Costco runs or deal with weekly grocery orders.
+
+We roast on-demand and deliver freshly packed single-serve pods directly to your office on a set monthly schedule. For a team your size, our standard breakroom case is {payload.pod_count} pods ({payload.box_count} boxes) once a month for ${payload.monthly_total} flat—no shipping fees.
+
+You can lock in the monthly replenishment directly here:
+{payload.url}
+
+Compatible with all standard Keurigs. You can pause or adjust count anytime via your portal.
+"""
+
+Send_Email(to=payload.email, subject="Restocking the [Company] Keurig (Dark Mode roast)", body=email_body)
+
+
+// ==========================================
+// PHASE 4: PASSIVE FULFILLMENT HOOKS
+// ==========================================
+
+EVENT On_Shopify_Order_Created(order_payload):
+// Intercepted natively by Shopify/Roastify app, logging for CRM tracking
+IF order_payload.contains_tag("B2B_PROSPECT"):
+Update_CRM_Status(order_payload.customer_email, "ACTIVE_SUBSCRIPTION")
+
+EVENT On_Subscription_Cycle_Completed(customer_id, cycle_count):
+IF cycle_count == 2:
+Send_Volume_Upsell_Email(customer_id)
+
+// ==========================================
+// MAIN CONTROLLER
+// ==========================================
+
+MAIN():
+target_offices = Fetch_Target_Offices(city_name="Tacoma", state="WA")
+
+FOR EACH office IN target_offices:
+    // Assume default staff count of 10 if unable to parse exact number
+    estimated_staff_count = 10 
+    
+    lead = Scrape_Office_Decision_Maker(office.website)
+    
+    IF lead IS NOT NULL:
+        payload = Generate_Targeted_Outbound_Payload(
+            lead={
+                "name": lead.name, 
+                "email": lead.email, 
+                "company_name": office.company_name
+            }, 
+            staff_count=estimated_staff_count
+        )
+        
+        Execute_B2B_Outreach(payload)
+        Wait(Delay=Random(30, 90)) // Rate limiting to prevent SMTP blacklisting

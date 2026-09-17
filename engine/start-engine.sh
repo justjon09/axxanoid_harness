@@ -22,7 +22,7 @@ llama-server \
   --models-preset ./models.ini \
   --port 8080 \
   -fa 1 \
-  -c 8192 \
+  -c 32768 \
   --embedding \
   --jinja \
   --cache-type-k q8_0 \
