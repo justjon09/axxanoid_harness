@@ -160,13 +160,16 @@ restRouter.post('/chat', async (req, res) => {
         if (allowedSkillsList.length > 0) {
             for (const [skillId, skillData] of SkillRegistry.entries()) {
                 if (isAllowed(skillId, allowedSkillsList)) {
-                    // Dynamically extract the first paragraph or description block
-                    const descMatch = skillData.content.match(/## Description\s*([\s\S]*?)(?=\n##|$)/);
-                    const description = descMatch ? descMatch[1].trim() : "Standard operational playbook.";
-
-                    // Construct the absolute path so AxxBot can read it from inside the jail
-                    const absPath = path.resolve(__dirname, '../skills', skillData.sourceDir, `${skillId}.md`);
-                    skillContext += `- Name: ${skillId}\n  Path: ${absPath}\n  Description: ${description}\n\n`;                    
+                    // JIT EXPANSION: If the CEO explicitly invokes the skill, inject the full playbook
+                    if (message.includes(skillId)) {
+                        skillContext += `\n\n--- ACTIVE SKILL PLAYBOOK: ${skillId} ---\n${skillData.content}\n`;
+                    } else {
+                        // Otherwise, keep the context window light with a summary
+                        const descMatch = skillData.content.match(/## Description\s*([\s\S]*?)(?=\n##|$)/);
+                        const description = descMatch ? descMatch[1].trim() : "Standard operational playbook.";
+                        const absPath = path.resolve(__dirname, '../skills', skillData.sourceDir, `${skillId}.md`);
+                        skillContext += `- Name: ${skillId}\n  Path: ${absPath}\n  Description: ${description}\n\n`;
+                    }                   
                 }
             }
         }
@@ -321,7 +324,7 @@ restRouter.post('/chat', async (req, res) => {
                         broadcastUpdate('telemetry_log', `[ERROR] ${action.target} failed: ${executionResult.error}`);
                         // Feed the error back so the LLM can self-heal or tell the user it failed
                         // conversationHistory.push({ role: 'assistant', content: completion.content });
-                        conversationHistory.push({ 
+                        formattedMessages.push({ 
                             role: 'user', 
                             content: `[SYSTEM TOOL ERROR - ${action.target}]\n${executionResult.error}` 
                         });
