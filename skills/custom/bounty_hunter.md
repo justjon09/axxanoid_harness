@@ -11,31 +11,32 @@ You MUST create 5 cards linked sequentially using `depends_on_ids`. Write the de
 
 **Phase 1: Environment Setup (Assign to: execubot)**
 - Description MUST contain the exact git command targeting the shared workspace.
-- Example: `git clone <URL> repo_dir && cd repo_dir && git checkout -b fix/bounty-issue`
+- Description MUST command ExecuBot to use the GitHub CLI to fork the repo, clone it into a dedicated directory named `bounty_<YYYY-MM-DD-HHMM>`, and checkout a new branch.
+- Example: `gh repo fork <URL> --clone --default-branch-only --dest bounty_2026-09-16-1537 && cd bounty_2026-09-16-1537 && git checkout -b axxanoid/issue-submission`
 
 **Phase 2: Code Generation & Patching (Assign to: noid)**
-- Description MUST contain the cloned directory name (e.g., `./repo_dir`) and a clear, technical summary of the bug details provided by the CEO. Do not just say "Fix Issue"; you must explain *what* the issue is so Noid has the context to fix it.
+- Description MUST contain the cloned directory name (e.g., `./bounty_2026-09-16-1537`) and a clear, technical summary of the bug details provided by the CEO. Do not just say "Fix Issue"; you must explain *what* the issue is so Noid has the context to fix it.
 - *Dependency:* Depends on Phase 1.
 
 **Phase 3: Isolated CI Validation (Assign to: execubot)**
 - Description MUST instruct ExecuBot to use the `run_docker_terminal` tool.
-- You MUST explicitly state the `target_dir` as the exact cloned directory name (e.g., `./repo_dir`) so the tests run in the correct folder.
+- You MUST explicitly state the `target_dir` as the exact cloned directory name (e.g., `./bounty_2026-09-16-1537`) so the tests run in the correct folder.
 - *Dependency:* Depends on Phase 2.
 
 **Phase 4: The Human QA Gate (Assign to: axxbot)**
-- Description MUST state: "You are the QA Gate. Immediately use `workboard_mutate` to change this card's status to `blocked` with the payload 'AWAITING CEO REVIEW'. Do NOT mark this done. Wait for the CEO to explicitly say 'I approve Phase 4' in the chat before marking it done."
+- Description MUST state: "You are the QA Gate. Immediately use `workboard_mutate` to change this card's status to `blocked` with the payload `{\"missing_input\": \"AWAITING CEO REVIEW\"}`. Do NOT mark this done."
+- After creating the cards, use `user_message` to advise the CEO: "Phase 4 is awaiting your review. To approve, please reply with: 'I approve <INSERT_PHASE_4_CARD_ID>'". 
 - *Dependency:* Depends on Phase 3.
 
     ## Handling CEO Approvals
-    When the CEO explicitly approves Phase 4 in the chat (e.g., "I approve Phase 4"), you MUST NOT create a new workboard card to continue the work. The Phase 5 card is already waiting on the board.
+    When the CEO explicitly approves Phase 4 in the chat (e.g., "I approve task-XXXXXXX"), you MUST NOT create a new workboard card to continue the work. The Phase 5 card is already waiting on the board.
 
     Your ONLY job is to unblock the paused task so the pipeline can automatically resume:
-    1. Use the `workboard_read` tool to find your Phase 4 QA Gate card that is currently `blocked`.
-    2. Use the `workboard_mutate` tool to change that specific card's status to `done`. 
+    1. Immediately use the `workboard_mutate` tool on that specific `task-XXXXXXX` ID, setting its status to `done`.
 
     Do nothing else. The Orchestrator will automatically trigger Phase 5 once the gate is marked done.
 
 **Phase 5: Payout Submission (Assign to: execubot)**
-- Description MUST include the full commit, push, and PR commands.
-- Example: `cd repo_dir && git add . && git commit -m "Fix issue" && git push origin HEAD && gh pr create --title "Fix: Resolve issue" --body "Closes #123"`
+- Description MUST include the exact directory name and the full commit, push, and PR commands.
+- Example: `cd ./bounty_2026-09-16-1537 && git add . && git commit -m "Fix issue" && git push origin HEAD && gh pr create --title "Fix: Resolve issue" --body "Closes #123"`
 - *Dependency:* Depends on Phase 4.

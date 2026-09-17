@@ -38,6 +38,11 @@ export async function execute(payload: Record<string, any>): Promise<ToolResult>
         const venvBin = path.join(venvPath, 'bin');
 
         // Programmatically enforce the virtual environment
+        const jailCwd = path.resolve(__dirname, '../../workspaces/shared');
+        if (!fs.existsSync(jailCwd)) {
+            fs.mkdirSync(jailCwd, { recursive: true });
+        }
+
         const env = { 
             ...process.env, 
             VIRTUAL_ENV: venvPath,
@@ -49,7 +54,7 @@ export async function execute(payload: Record<string, any>): Promise<ToolResult>
             let stderr = '';
             
             // Use spawn with bash -c to handle pipes/redirects and prevent buffer limit crashes
-            const proc = spawn('bash', ['-c', commandToRun], { cwd: process.cwd(), env });
+            const proc = spawn('bash', ['-c', commandToRun], { cwd: jailCwd, env });
             
             proc.stdout.on('data', (data) => stdout += data.toString());
             proc.stderr.on('data', (data) => stderr += data.toString());
@@ -71,7 +76,7 @@ export async function execute(payload: Record<string, any>): Promise<ToolResult>
         return {
             success: success,
             output: JSON.stringify(logPayload, null, 2),
-            error: success ? undefined : `Command failed with exit code ${result.code}`
+            error: success ? undefined : `Command failed (Code ${result.code}). STDERR: ${result.stderr.trim()}`
         };
         
     } catch (err: any) {

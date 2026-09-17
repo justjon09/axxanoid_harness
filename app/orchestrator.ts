@@ -62,7 +62,7 @@ export async function resolveDependencies() {
     const blockedCards = db.prepare(`SELECT * FROM workboard_cards WHERE status = 'blocked'`).all() as WorkboardCard[];
     for (const card of blockedCards) {
         // Protect cards that were manually blocked by workers needing triage
-        if (card.result_payload && card.result_payload.includes('missing_need')) {
+        if (card.result_payload && (card.result_payload.includes('missing_need') || card.result_payload.includes('missing_input'))) {
             continue; 
         }
         
@@ -372,7 +372,10 @@ export async function processTask(task: WorkboardCard) {
                     timestamp: new Date().toISOString(),
                     agent: task.assignee,
                     action, 
-                    execution: executionResult 
+                    execution: {
+                        success: executionResult.success,
+                        error: executionResult.error
+                    } 
                 };
 
                 if (executionResult.success) {
@@ -409,7 +412,7 @@ export async function processTask(task: WorkboardCard) {
                     conversationHistory.push({ role: 'assistant', content: completion.content });
                     conversationHistory.push({
                         role: 'user',
-                        content: `TOOL EXECUTION ERROR (${action.target}): ${executionResult.error}\nFix the issue in your parameters/code and re-issue the tool_call. Use 'chat_search' if you need to review earlier history.`
+                        content: `TOOL EXECUTION ERROR (${action.target}): ${executionResult.error}\nFix the issue in your parameters/code and re-issue the tool_call.`
                     });
                 }
             } else {

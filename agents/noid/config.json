@@ -16,7 +16,7 @@
     "rag_ingest"
   ],
   "allowed_skills": [
-    "task_decomposition", 
+    "sub_task_decomposition", 
     "code_generation"
   ]
 }
