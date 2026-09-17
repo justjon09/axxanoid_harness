@@ -372,10 +372,7 @@ export async function processTask(task: WorkboardCard) {
                     timestamp: new Date().toISOString(),
                     agent: task.assignee,
                     action, 
-                    execution: {
-                        success: executionResult.success,
-                        error: executionResult.error
-                    } 
+                    execution: executionResult 
                 };
 
                 if (executionResult.success) {
