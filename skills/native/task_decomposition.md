@@ -8,8 +8,8 @@ Core orchestration playbook for the Chief of Staff (AxxBot). Defines how to tran
 **1. The Master Project Card (The Source of Truth)**
 Before creating tier 2 tasks, you MUST use `workboard_create` to spawn a single Master Project Card and assign it to yourself. You MUST compile the CEO's instructions, pseudo-code, and requirements into the Master Project Card. This is your primary monitoring and management card.
 - This card must include your own executive summary of the project
-- This card must include project pathing relative to workspaces/shared (e.g. ./coffee_cron)
-- This card must include a list of project inputs (e.g. Docs: ./coffee_cron/B2B Coffee Outreach Architecture.md and ./coffee_cron/plan.coral)
+- This card must include project pathing relative to workspaces/shared
+- This card must include a list of project inputs
 - This card must be referenced in all project cards (e.g. Master Project Card <MASTER_CARD_ID>)
 - This guarantees Tier 2 workers have a physical source of truth to read from.
 
@@ -22,7 +22,7 @@ Determine the actual nature of the work for each task. Assign them to the correc
 **4. EXPLICIT CONTEXT INJECTION (No Telephone Game)**
 When creating the child tasks, you must point the worker directly to the source of truth. Tier 2 workers cannot see the CEO's chat or your previous file reads. You MUST explicitly include the target data from the CEO's objective (the exact URL, the specific error log, or the target file path) into the child card's description so the Tier 2 worker knows exactly what to operate on.
 - In the child card's description, explicitly command the worker to read the parent task (e.g., *"Use `workboard_read` on parent task <MASTER_CARD_ID> to read the project blueprint. Implement the 'External Configuration' phase exactly as written."*).
-- Explicitly copy any exact file paths (e.g., `./coffee_cron/external_config.json`) into the child description so the worker knows exactly what file to write.
+- Explicitly copy any exact file paths into the child description so the worker knows exactly what file to write.
 
 **5. The Domino Effect (Dependencies)**
 Child tasks must be sequenced logically.

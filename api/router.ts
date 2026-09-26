@@ -156,20 +156,25 @@ restRouter.post('/chat', async (req, res) => {
             }
         }
 
-        let skillContext = '';
+        let skillContext = `You Must read the Standard Operational Procedure prior to invoking.\n\n--- Standard Operational Procedures:\n`;
         if (allowedSkillsList.length > 0) {
             for (const [skillId, skillData] of SkillRegistry.entries()) {
                 if (isAllowed(skillId, allowedSkillsList)) {
-                    // JIT EXPANSION: If the CEO explicitly invokes the skill, inject the full playbook
-                    if (message.includes(skillId)) {
-                        skillContext += `\n\n--- ACTIVE SKILL PLAYBOOK: ${skillId} ---\n${skillData.content}\n`;
-                    } else {
-                        // Otherwise, keep the context window light with a summary
-                        const descMatch = skillData.content.match(/## Description\s*([\s\S]*?)(?=\n##|$)/);
-                        const description = descMatch ? descMatch[1].trim() : "Standard operational playbook.";
-                        const absPath = path.resolve(__dirname, '../skills', skillData.sourceDir, `${skillId}.md`);
-                        skillContext += `- Name: ${skillId}\n  Path: ${absPath}\n  Description: ${description}\n\n`;
-                    }                   
+                    const descMatch = skillData.content.match(/## Description\s*([\s\S]*?)(?=\n##|$)/);
+                    const description = descMatch ? descMatch[1].trim() : "Standard Operational Procedure.";
+                    const absPath = path.resolve(__dirname, '../skills', skillData.sourceDir, `${skillId}.md`);
+                    skillContext += `- Name: ${skillId}\n  Path: ${absPath}\n  Description: ${description}\n\n`;
+
+                    // // JIT EXPANSION: If the CEO explicitly invokes the skill, inject the full Operational Procedure
+                    // if (message.includes(skillId)) {
+                    //     skillContext += `\n\n--- Standard Operational Procedure: ${skillId} ---\n${skillData.content}\n`;
+                    // } else {
+                    //     // Otherwise, keep the context window light with a summary
+                    //     const descMatch = skillData.content.match(/## Description\s*([\s\S]*?)(?=\n##|$)/);
+                    //     const description = descMatch ? descMatch[1].trim() : "Standard Operational Procedure.";
+                    //     const absPath = path.resolve(__dirname, '../skills', skillData.sourceDir, `${skillId}.md`);
+                    //     skillContext += `- Name: ${skillId}\n  Path: ${absPath}\n  Description: ${description}\n\n`;
+                    // }                   
                 }
             }
         }

@@ -9,14 +9,7 @@ Advanced multi-turn triage playbook for AxxBot (Tier 1 Chief of Staff). Handles 
 
 ### Phase 1: Missing Need Identification
 1. **Inspect Blocked Card:** Use `workboard_read` with `card_id` set to the target blocked card ID specified in your task description.
-2. **Parse Payload:** Extract the `result_payload` and locate the `"missing_need"` and `"suggestion"` fields or standard error stack traces.
-   - Example payload target:
-     ```json
-     {
-       "missing_need": "Missing python package: requests",
-       "suggestion": "Run pip install requests in axx_env"
-     }
-     ```
+2. **Parse Payload:** If you read the Workboard and see a card with status: blocked, review the `result_payload`. You may ONLY initiate triage if the payload contains the specific key `"missing_need"`. If the payload is empty or lacks `"missing_need"`,  DO NOT attempt to triage or remediate it. Ignore it completely.
 3. **Determine Remediation Worker:**
    - **Environment/Dependencies/CLI:** Assign to `execubot`.
    - **Code Bug/File Fix:** Assign to `noid`.
@@ -53,9 +46,9 @@ Advanced multi-turn triage playbook for AxxBot (Tier 1 Chief of Staff). Handles 
    - **Case A: Remediation is STILL `in_progress` or `ready`:**
      - Exit turn without changing the original card status. Wait for the next Orchestrator pulse cycle to review.
    - **Case B: Remediation `failed` or returned new `missing_need`:**
-     - Do NOT unblock the original task.
-     - Analyze the failure in the remediation payload.
-     - Spawn a new follow-up remediation task using `workboard_create` with updated instructions.
+     - If your remediation task fails and you cannot resolve the issue, you must escalate to the CEO. Use `workboard_mutate` on the ORIGINAL blocked card to update the `result_payload`:
+       - Change the `"missing_need"` key to `"missingNeed"` and retain the value.
+       - Append a new key `"missing_input"` with the value `"Triage failed. CEO intervention required."`
    - **Case C: Remediation is `done` (Needs Met):**
      - Verify from the result payload that the required dependency/fix succeeded.
      - Proceed to **Phase 4**.

@@ -211,7 +211,7 @@ export async function processTask(task: WorkboardCard) {
         parsedInheritance = task.inherited_parent_result;
         // Protect the context window: Truncate massive parent payloads
         if (parsedInheritance.length > 400) {
-            parsedInheritance = parsedInheritance.substring(0, 400) + "\n...[PAYLOAD TRUNCATED. USE 'workboard_read' TO VIEW FULL PARENT DATA.]";
+            parsedInheritance = "[PAYLOAD TOO LARGE. USE 'workboard_read' TOOL ON PARENT CARD TO VIEW DATA.]";
         }
         try { 
             parsedInheritance = JSON.parse(parsedInheritance);
