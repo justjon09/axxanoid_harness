@@ -128,8 +128,8 @@ restRouter.post('/chat', async (req, res) => {
         let allowedToolsList: string[] = [];
         let agentSoul = '';
         let agentIdentity = '';
-        let modelAlias = 'llama-3-groq-8b-tool-use';
-        let promptFormat: 'llama3_groq' | 'qwen_coder' = 'llama3_groq';
+        let modelAlias = 'cognitivecomputations_Dolphin3.0-Mistral-24B';
+        let promptFormat: 'llama3_groq' | 'qwen_coder' | 'dolphin' = 'dolphin';
 
         if (fs.existsSync(configPath)) {
             const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
@@ -137,7 +137,14 @@ restRouter.post('/chat', async (req, res) => {
             allowedSkillsList = config.allowed_skills || [];
             if (config.assigned_model) {
                 modelAlias = config.assigned_model;
-                promptFormat = modelAlias.toLowerCase().includes('llama') ? 'llama3_groq' : 'qwen_coder';
+                const lowerModel = modelAlias.toLowerCase();
+                if (lowerModel.includes('qwen')) {
+                    promptFormat = 'qwen_coder';
+                } else if (lowerModel.includes('groq') || lowerModel.includes('llama3_groq')) {
+                    promptFormat = 'llama3_groq';
+                } else {
+                    promptFormat = 'dolphin';
+                }
             }
         }
 
@@ -156,20 +163,17 @@ restRouter.post('/chat', async (req, res) => {
             }
         }
 
+        // Skill Summary Compiler with Explicit Read Instructions
         let skillContext = '';
         if (allowedSkillsList.length > 0) {
+            skillContext += `# Available Operational Procedures (Skills)\n`;
+            skillContext += `The following are predefined processes provided by the CEO. Skills are NOT executable tools. To execute a process, you MUST use the 'read_file' tool on the specified Path to load the full instructions into context before taking action.\n\n`;
             for (const [skillId, skillData] of SkillRegistry.entries()) {
                 if (isAllowed(skillId, allowedSkillsList)) {
-                    // JIT EXPANSION: If the CEO explicitly invokes the skill, inject the full playbook
-                    if (message.includes(skillId)) {
-                        skillContext += `\n\n--- ACTIVE SKILL PLAYBOOK: ${skillId} ---\n${skillData.content}\n`;
-                    } else {
-                        // Otherwise, keep the context window light with a summary
-                        const descMatch = skillData.content.match(/## Description\s*([\s\S]*?)(?=\n##|$)/);
-                        const description = descMatch ? descMatch[1].trim() : "Standard operational playbook.";
-                        const absPath = path.resolve(__dirname, '../skills', skillData.sourceDir, `${skillId}.md`);
-                        skillContext += `- Name: ${skillId}\n  Path: ${absPath}\n  Description: ${description}\n\n`;
-                    }                   
+                    const descMatch = skillData.content.match(/## Description\s*([\s\S]*?)(?=\n##|$)/);
+                    const description = descMatch ? descMatch[1].trim() : "Standard operational pocedure.";
+                    const absPath = path.resolve(__dirname, '../skills', skillData.sourceDir, `${skillId}.md`);
+                    skillContext += `- Name: ${skillId}\n  Description: ${description}\n  Path: ${absPath}\n\n`;     
                 }
             }
         }
@@ -229,6 +233,7 @@ restRouter.post('/chat', async (req, res) => {
             // Dispatch with the hardware-level JSON lock
             const completion = await sendLlamaCompletion(formattedMessages, { 
                 model: modelAlias,
+                temperature: promptFormat === 'dolphin' ? 0.6 : 0.2,
                 response_format: {
                     type: "json_object",
                     schema: grammarSchema

@@ -69,7 +69,7 @@ export function normalizeToolSchema(externalSchema: any): HarnessToolDefinition 
 export function formatPromptForModel(
     messages: ChatMessage[],
     tools: HarnessToolDefinition[],
-    modelType: 'llama3_groq' | 'qwen_coder'
+    modelType: 'llama3_groq' | 'qwen_coder' | 'dolphin'
 ): ChatMessage[] {
     const formattedMessages = JSON.parse(JSON.stringify(messages)) as ChatMessage[];
     if (tools.length === 0) return formattedMessages;
@@ -107,7 +107,7 @@ export function formatPromptForModel(
         } else {
             formattedMessages.unshift({ role: 'system', content: toolSystemPrompt });
         }
-    } else if (modelType === 'qwen_coder') {
+    } else if (modelType === 'qwen_coder' || modelType === 'dolphin') {
         const toolSystemPrompt = UnifiedToolSystemPrompt;
 
         if (formattedMessages.length > 0 && formattedMessages[0].role === 'system') {

@@ -59,7 +59,7 @@ export async function sendLlamaCompletion(
     const payload = {
         messages,
         temperature: options.temperature ?? 0.2,
-        max_tokens: options.max_tokens ?? 2048,
+        max_tokens: options.max_tokens ?? 8192,
         top_p: options.top_p ?? 0.9,
         stream: false,
         ...(options.model ? { model: options.model } : {}),

@@ -1,7 +1,7 @@
 {
   "agent_id": "axxbot",
   "tier": 1,
-  "assigned_model": "qwen2.5-coder-14b-instruct",
+  "assigned_model": "cognitivecomputations_Dolphin3.0-Mistral-24B",
   "workspace_path": "/workspaces/agents/axxbot/",
   "allowed_tools": [
     "workboard_*",

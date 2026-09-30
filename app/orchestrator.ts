@@ -85,8 +85,10 @@ export async function resolveDependencies() {
                 WHERE cd.card_id = ?
             `).all(card.id) as any[];
 
-            // Combine payloads if there are multiple dependencies
-            const inheritedPayload = parentResults.map(p => p.result_payload).join('\n\n');
+            // Safely structure multiple parent payloads
+            const inheritedPayload = JSON.stringify(parentResults.map(p => { 
+                try { return JSON.parse(p.result_payload); } catch { return p.result_payload; } 
+            }));
 
             db.prepare(`
                 UPDATE workboard_cards 
@@ -122,7 +124,7 @@ export async function autoTriageBlockedCards() {
             `).run(
                 triageId,
                 `Triage Blocked Card: ${card.id}`,
-                `Card ${card.id} is blocked with a missing need. Execute the triage_blocked skill playbook: inspect the payload, spawn a remediation task, monitor its progress, and unblock card ${card.id} once verified.`,
+                `Card ${card.id} is blocked with a missing need. Execute the triage_blocked procedure: inspect the payload, spawn a remediation task, monitor its progress, and unblock card ${card.id} once verified.`,
                 tier1Agent
             );
 
@@ -168,7 +170,7 @@ export async function processTask(task: WorkboardCard) {
     // Default fallback configurations
     let isWorker = true;
     let modelAlias = 'qwen2.5-coder-14b-instruct';
-    let promptFormat: 'llama3_groq' | 'qwen_coder' = 'qwen_coder';
+    let promptFormat: 'llama3_groq' | 'qwen_coder' | 'dolphin' = 'qwen_coder';
 
     // Dynamically resolve everything from config.json
     if (fs.existsSync(configPath)) {
@@ -181,7 +183,14 @@ export async function processTask(task: WorkboardCard) {
             // Map assignee to exact model alias registered in models.ini
             modelAlias = config.assigned_model;
             // Map assignee to internal translator prompt formatter
-            promptFormat = modelAlias.toLowerCase().includes('llama') ? 'llama3_groq' : 'qwen_coder';
+            const lowerModel = modelAlias.toLowerCase();
+            if (lowerModel.includes('dolphin')) {
+                promptFormat = 'dolphin';
+            } else if (lowerModel.includes('llama') || lowerModel.includes('groq')) {
+                promptFormat = 'llama3_groq';
+            } else {
+                promptFormat = 'qwen_coder';
+            }
         }
     }
 
@@ -197,8 +206,21 @@ export async function processTask(task: WorkboardCard) {
         }
     }
 
-    // Filter SkillRegistry and compile playbook context
+    // Skill Summary Compiler with Explicit Read Instructions
     let skillContext = '';
+    if (allowedSkillsList.length > 0) {
+        skillContext += `# Available Operational Procedures (Skills)\n`;
+        skillContext += `The following are predefined processes provided by the CEO. Skills are NOT executable tools. To execute a process, you MUST use the 'read_file' tool on the specified Path to load the full instructions into context before taking action.\n\n`;
+        
+        for (const [skillId, skillData] of SkillRegistry.entries()) {
+            if (isAllowed(skillId, allowedSkillsList)) {
+                const descMatch = skillData.content.match(/## Description\s*([\s\S]*?)(?=\n##|$)/);
+                const description = descMatch ? descMatch[1].trim() : "Standard operational procedure.";
+                const absPath = path.resolve(__dirname, '../skills', skillData.sourceDir, `${skillId}.md`);
+                skillContext += `- Skill Name: ${skillId}\n  Description: ${description}\n  Path: ${absPath}\n\n`;     
+            }
+        }
+    }
     for (const [skillId, skillData] of SkillRegistry.entries()) {
         if (isAllowed(skillId, allowedSkillsList)) {
             skillContext += `\n\n${skillData.content}`;
@@ -209,13 +231,12 @@ export async function processTask(task: WorkboardCard) {
     let parsedInheritance: any = "";
     if (task.inherited_parent_result) {
         parsedInheritance = task.inherited_parent_result;
-        // Protect the context window: Truncate massive parent payloads
+        // Protect the context window
         if (parsedInheritance.length > 400) {
-            parsedInheritance = parsedInheritance.substring(0, 400) + "\n...[PAYLOAD TRUNCATED. USE 'workboard_read' TO VIEW FULL PARENT DATA.]";
+            parsedInheritance = "[PAYLOAD TOO LARGE. USE 'workboard_read' TOOL ON PARENT CARD TO VIEW DATA.]";
         }
         try { 
             parsedInheritance = JSON.parse(parsedInheritance);
-            
         } 
         catch { parsedInheritance = parsedInheritance; }
     }
@@ -270,6 +291,7 @@ export async function processTask(task: WorkboardCard) {
             // Dispatch to Local Engine with JSON lock
             const completion = await sendLlamaCompletion(formattedMessages, { 
                 model: modelAlias,
+                temperature: promptFormat === 'dolphin' ? 0.6 : 0.2,
                 response_format: {
                     type: "json_object",
                     schema: grammarSchema
@@ -300,7 +322,7 @@ export async function processTask(task: WorkboardCard) {
                 const candidateContent = action.payload?.content || action.raw_response || completion.content;
                 console.warn(`>>> [PROSE REJECTED] Worker [${task.assignee.toUpperCase()}] returned prose instead of a tool call.\n\n Content:\n${candidateContent}`);
 
-                conversationHistory.push({ role: 'assistant', content: completion.content });
+                conversationHistory.push({ role: 'assistant', content: completion.content.substring(0, 200) + '\n...[SYNTAX ERROR TRUNCATED]' });
                 conversationHistory.push({
                     role: 'user',
                     content: 'ERROR: Conversational responses are rejected. You must output a JSON tool_call payload (e.g. write_file or run_terminal) to perform physical work on the OS.'
@@ -383,13 +405,12 @@ export async function processTask(task: WorkboardCard) {
                     if (conversationHistory.length > 4) {
                         conversationHistory.splice(2, conversationHistory.length - 4); 
                     }                    
-                    conversationHistory.push({ role: 'assistant', content: completion.content });
+                    conversationHistory.push({ role: 'assistant', content: completion.content.substring(0, 200) + '\n...[SYNTAX ERROR TRUNCATED]' });
                     conversationHistory.push({
                         role: 'user',
                         content: `TOOL EXECUTION SUCCESS (${action.target}):\n${executionResult.output}\nEvaluate this result and proceed to the next step, or use 'workboard_mutate' if the task is finished.`
                     });
-                    
-                    // taskCompleted = true;
+
                     // ONLY kill the execution loop if the agent explicitly mutated its own card to an end state
                     if (
                         action.target === 'workboard_mutate' && 
