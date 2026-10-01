@@ -12,18 +12,18 @@ def run_script(script_name):
     except subprocess.CalledProcessError as e:
         print(f"[!] {script_name} crashed with error code {e.returncode}")
 
-def run_pipeline(grift_loops=3):
+def run_pipeline(outreach_loops=3):
     print("\n" + "="*50)
-    print("STARTING DIRECTORY AUTOMATION PIPELINE")
+    print("STARTING B2B COFFEE AUTOMATION PIPELINE")
     print("="*50)
     
-    # Scrape Google (Loopable via Command Brain)
-    for i in range(grift_loops):
-        print(f"\n--- Grift Scrape Cycle {i+1} of {grift_loops} ---")
-        run_script("grift.py")
+    # Scrape Overpass API (Loopable via Command Brain)
+    for i in range(outreach_loops):
+        print(f"\n--- B2B Coffee Scrape Cycle {i+1} of {outreach_loops} ---")
+        run_script("scraper.py")
         
         # Rest briefly between matrix requests so we don't hammer the WP API
-        if i < grift_loops - 1:
+        if i < outreach_loops - 1:
             print("    [Zzz] Matrix cool-down for 15 seconds...")
             time.sleep(15)
 
@@ -37,4 +37,4 @@ def run_pipeline(grift_loops=3):
     print("="*50 + "\n")
 
 if __name__ == "__main__":
-    run_pipeline(grift_loops=4)
+    run_pipeline(outreach_loops=3)
