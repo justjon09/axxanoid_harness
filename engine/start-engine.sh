@@ -18,12 +18,12 @@ llama-server \
   > /dev/null 2>&1 &
 EMBED_PID=$!
 
-echo ">>> Starting Inference Engine (Qwen 2.5 Coder 14B / Dolphin 3.0 Mistral 24B) on port 8080..."
+echo ">>> Starting Inference Engine (Qwen 2.5 Coder 14B / Dolphin 3.0 Mistral 24B / dolphincoder-starcoder2-15b) on port 8080..."
 llama-server \
   --models-preset ./models.ini \
   --port 8080 \
   -fa 1 \
-  -c 32768 \
+  -c 16384 \
   --jinja \
   --cache-type-k q8_0 \
   --cache-type-v q8_0

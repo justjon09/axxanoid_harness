@@ -1,7 +1,7 @@
 # SKILL: triage_blocked
 
 ## Description
-Advanced multi-turn triage playbook for AxxBot (Tier 1 Chief of Staff). Handles blocked task evaluation, remediation delegation, progress monitoring, and verified unblocking.
+Advanced multi-turn triage playbook for AxxBot (Tier 1 Chief of Staff). Handles blocked task evaluation, remediation delegation, and programatic unblocking.
 
 ---
 
@@ -26,17 +26,16 @@ Advanced multi-turn triage playbook for AxxBot (Tier 1 Chief of Staff). Handles 
 ---
 
 ### Phase 2: Remediation Delegation
-1. **Check Existing Remediation Tasks:** Use `workboard_read` to check if a child remediation card already exists for this triage task (`parent_id` = current Triage task ID).
-2. **Spawn Remediation Task (If None Exists):**
+1. **Spawn Remediation Task (If None Exists):**
    - Use `workboard_create`:
      - `title`: `[REMEDIATION] Fix missing_need for <original_card_id>`
      - `description`: Explicit instructions for the Tier 2 worker detailing the exact fix required to resolve `missing_need`.
      - `assignee`: Target specialist (`execubot`, `noid`, etc.).
-     - `parent_id`: Your current Triage Task ID.
-3. **Maintain Active Triage State:**
+     - `parent_id`: `"<original_card_id>"`
+2. **Maintain Active Triage State:**
    - **DO NOT** mark the Triage task `done` yet.
    - Keep the original card in `blocked` status.
-   - Use `workboard_mutate` on your Triage task to set `status` to `in_progress` (or `blocked` dependent on the remediation card) with a progress update payload:
+   - Use `workboard_mutate` on your Triage task to set `status` to `in_progress` with a progress update payload:
      ```json
      {
        "triage_state": "remediation_dispatched",
@@ -44,37 +43,18 @@ Advanced multi-turn triage playbook for AxxBot (Tier 1 Chief of Staff). Handles 
        "target_blocked_card": "<original_card_id>"
      }
      ```
-
----
-
-### Phase 3: Review Remediation & Verification Loop
-1. **Inspect Remediation Task Status:** Use `workboard_read` to fetch the state of the remediation card.
-2. **Evaluate Remediation Outcome:**
-   - **Case A: Remediation is STILL `in_progress` or `ready`:**
-     - Exit turn without changing the original card status. Wait for the next Orchestrator pulse cycle to review.
-   - **Case B: Remediation `failed` or returned new `missing_need`:**
-     - Do NOT unblock the original task.
-     - Analyze the failure in the remediation payload.
-     - Spawn a new follow-up remediation task using `workboard_create` with updated instructions.
-   - **Case C: Remediation is `done` (Needs Met):**
-     - Verify from the result payload that the required dependency/fix succeeded.
-     - Proceed to **Phase 4**.
-
 ---
 
 ### Phase 4: Verified Unblocking & Lifecycle Closure
-1. **Unblock Original Card:**
+1. **Update Original Card:**
    - Use `workboard_mutate` on the **original blocked card**:
-     - `status`: `"ready"`
-     - `result_payload`: Include a resolution note (e.g., `{"unblocked_by": "<triage_task_id>", "resolution": "Remediation verified complete"}`)
+     - Set `depends_on_ids` to the new Remediation Task ID you just created.
+     - Overwrite the `result_payload` to exactly: `{"waiting_on": "<remediation_task_id>"}`.
+      *(Crucial: This explicitly removes the "missing_need" string so the background Orchestrator knows it can take over).*
 2. **Close Triage Task:**
    - Use `workboard_mutate` on your **Triage task**:
      - `status`: `"done"`
-     - `result_payload`: Final summary of the triage loop and successful remediation output.
+     - `result_payload`: `"<remediation_task_id>"`
+     - You are finished. The background orchestrator will now automatically unblock the original task when the remediation card is complete.
 
 ---
-
-## Strategic Rules
-- **Never Assume Instant Unblocking:** Creating a remediation task and completing a remediation task are distinct steps. Always verify worker output before promoting the original card to `ready`.
-- **Preserve Blocker Context:** Keep the `missing_need` string in the original card payload until the fix is verified.
-- **Loop Limit Guard:** If remediation fails 3 consecutive times, escalate directly to the CEO via chat and set the Triage card status to `failed`.

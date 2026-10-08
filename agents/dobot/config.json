@@ -1,7 +1,7 @@
 {
   "agent_id": "dobot",
   "tier": 2,
-  "assigned_model": "qwen2.5-coder-14b-instruct",
+  "assigned_model": "qwen2.5-coder-7b",
   "workspace_path": "/workspaces/agents/dobot/",
   "allowed_tools": [
     "read_file",

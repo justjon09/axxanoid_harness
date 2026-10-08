@@ -169,7 +169,7 @@ export async function processTask(task: WorkboardCard) {
 
     // Default fallback configurations
     let isWorker = true;
-    let modelAlias = 'qwen2.5-coder-14b-instruct';
+    let modelAlias = 'qwen2.5-coder-7b';
     let promptFormat: 'llama3_groq' | 'qwen_coder' | 'dolphin' = 'qwen_coder';
 
     // Dynamically resolve everything from config.json

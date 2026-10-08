@@ -18,7 +18,8 @@ export const schema: HarnessToolDefinition = {
 
 export async function execute(payload: Record<string, any>): Promise<ToolResult> {
     try {
-        const agentsDir = path.resolve(process.cwd(), 'agents');
+        const agentsDir = path.resolve(process.cwd(), '../../agents');
+        // const agentsDir = path.resolve(__dirname, '../../agents');
         if (!fs.existsSync(agentsDir)) return { success: false, output: '', error: 'Agents directory not found.' };
 
         const roster: Record<string, any> = {};

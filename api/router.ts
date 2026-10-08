@@ -128,7 +128,7 @@ restRouter.post('/chat', async (req, res) => {
         let allowedToolsList: string[] = [];
         let agentSoul = '';
         let agentIdentity = '';
-        let modelAlias = 'cognitivecomputations_Dolphin3.0-Mistral-24B';
+        let modelAlias = 'dolphin3.0-24b';
         let promptFormat: 'llama3_groq' | 'qwen_coder' | 'dolphin' = 'dolphin';
 
         if (fs.existsSync(configPath)) {
