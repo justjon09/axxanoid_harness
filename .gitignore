@@ -32,6 +32,7 @@ axx_env/
 !.vscode/extensions.json
 .history/
 *.code-workspace
+.continue/
 
 # macOS System Files
 .DS_Store
