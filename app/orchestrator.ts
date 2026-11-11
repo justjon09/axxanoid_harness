@@ -141,8 +141,9 @@ export function getReadyTasks(): WorkboardCard[] {
     return db.prepare(`
         SELECT * FROM workboard_cards 
         WHERE status = 'ready' 
+        AND LOWER(assignee) NOT IN ?
         ORDER BY created_at ASC
-    `).all() as WorkboardCard[];
+    `).all("('ready', 'in_progress')") as WorkboardCard[];
 }
 
 /**
@@ -380,10 +381,17 @@ export async function processTask(task: WorkboardCard) {
 
                  // Double check permissions at the execution gate
                 if (!isAllowed(action.target, allowedToolsList)) {
-                    console.warn(`>>> [SECURITY BLOCK] ${task.assignee.toUpperCase()} attempted to use unauthorized tool: ${action.target}`);
-                    conversationHistory.push({ role: 'assistant', content: completion.content });
-                    conversationHistory.push({ role: 'user', content: `ERROR: You do not have permission to use the tool '${action.target}'. Review your constraints.` });
-                    continue;
+                    if (SkillRegistry.has(action.target) && isAllowed(action.target, allowedSkillsList)) {
+                        console.warn(`>>> [INFO BLOCK] ${task.assignee.toUpperCase()} is attempting to call a skill as a tool: ${action.target}`);
+                        conversationHistory.push({ role: 'assistant', content: completion.content });
+                        conversationHistory.push({ role: 'system', content: `[SYSTEM TOOL RESULT] '${action.target}' is a Skill. Read and Follow Skill to continue.\n\n${SkillRegistry.get(action.target)?.content}` });
+                        continue;
+                    } else {
+                        console.warn(`>>> [SECURITY BLOCK] ${task.assignee.toUpperCase()} attempted to use unauthorized tool: ${action.target}`);
+                        conversationHistory.push({ role: 'assistant', content: completion.content });
+                        conversationHistory.push({ role: 'user', content: `ERROR: You do not have permission to use the tool '${action.target}'. Review your constraints.` });
+                        continue;
+                    }
                 }
 
                 console.log(`>>> [EXECUTION] Intercepted Tool [${action.target}]. Executing on OS...`);
